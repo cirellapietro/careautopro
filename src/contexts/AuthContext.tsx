@@ -8,6 +8,8 @@ interface AuthContextType {
   loading: boolean;
   signUp: (email: string, password: string, metadata?: any) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signInWithGoogle: () => Promise<{ error: any }>;
+  signInWithFacebook: () => Promise<{ error: any }>;
   signOut: () => Promise<void>;
 }
 
@@ -77,6 +79,30 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return { error };
   };
 
+  const signInWithGoogle = async () => {
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/`
+      }
+    });
+    setLoading(false);
+    return { error };
+  };
+
+  const signInWithFacebook = async () => {
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'facebook',
+      options: {
+        redirectTo: `${window.location.origin}/`
+      }
+    });
+    setLoading(false);
+    return { error };
+  };
+
   const signOut = async () => {
     setLoading(true);
     await supabase.auth.signOut();
@@ -89,6 +115,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     loading,
     signUp,
     signIn,
+    signInWithGoogle,
+    signInWithFacebook,
     signOut,
   };
 
