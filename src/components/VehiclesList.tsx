@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useVehicles, Vehicle } from '@/hooks/useVehicles';
 import { VehicleCard } from './VehicleCard';
+import { VehicleForm } from './VehicleForm';
+import { VehicleDeleteDialog } from './VehicleDeleteDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -8,29 +10,41 @@ import { Plus, Car, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export const VehiclesList = () => {
-  const { vehicles, loading, error, deleteVehicle } = useVehicles();
+  const { vehicles, loading, error, addVehicle, updateVehicle, deleteVehicle } = useVehicles();
   const { toast } = useToast();
+  
+  // Stati per i dialoghi
+  const [formOpen, setFormOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const handleEdit = (vehicle: Vehicle) => {
-    // TODO: Implementare modifica veicolo
-    toast({
-      title: "Modifica veicolo",
-      description: `Modifica di ${vehicle.nomeveicolo} - funzionalità in arrivo`,
-    });
+    setSelectedVehicle(vehicle);
+    setFormOpen(true);
   };
 
-  const handleDelete = async (vehicleId: string) => {
-    if (!confirm('Sei sicuro di voler eliminare questo veicolo?')) return;
+  const handleDelete = (vehicleId: string) => {
+    const vehicle = vehicles.find(v => v.veicolo_id === vehicleId);
+    if (vehicle) {
+      setSelectedVehicle(vehicle);
+      setDeleteDialogOpen(true);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedVehicle) return;
     
-    setDeletingId(vehicleId);
-    const result = await deleteVehicle(vehicleId);
+    setDeletingId(selectedVehicle.veicolo_id);
+    const result = await deleteVehicle(selectedVehicle.veicolo_id);
     
     if (result.success) {
       toast({
         title: "Veicolo eliminato",
         description: "Il veicolo è stato eliminato con successo",
       });
+      setDeleteDialogOpen(false);
+      setSelectedVehicle(null);
     } else {
       toast({
         title: "Errore",
@@ -50,11 +64,44 @@ export const VehiclesList = () => {
   };
 
   const handleAddVehicle = () => {
-    // TODO: Implementare aggiunta veicolo
-    toast({
-      title: "Aggiungi veicolo",
-      description: "Funzionalità in arrivo",
-    });
+    setSelectedVehicle(null);
+    setFormOpen(true);
+  };
+
+  const handleFormSubmit = async (data: Partial<Vehicle>) => {
+    if (selectedVehicle) {
+      // Modifica
+      const result = await updateVehicle(selectedVehicle.veicolo_id, data);
+      if (result.success) {
+        toast({
+          title: "Veicolo aggiornato",
+          description: "Il veicolo è stato aggiornato con successo",
+        });
+      } else {
+        toast({
+          title: "Errore",
+          description: result.error || "Errore nell'aggiornamento del veicolo",
+          variant: "destructive",
+        });
+      }
+      return result;
+    } else {
+      // Aggiungi
+      const result = await addVehicle(data);
+      if (result.success) {
+        toast({
+          title: "Veicolo aggiunto",
+          description: "Il nuovo veicolo è stato aggiunto con successo",
+        });
+      } else {
+        toast({
+          title: "Errore",
+          description: result.error || "Errore nell'aggiunta del veicolo",
+          variant: "destructive",
+        });
+      }
+      return result;
+    }
   };
 
   if (loading) {
@@ -140,6 +187,22 @@ export const VehiclesList = () => {
           ))}
         </div>
       )}
+
+      {/* Dialoghi */}
+      <VehicleForm
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        vehicle={selectedVehicle}
+        onSubmit={handleFormSubmit}
+      />
+
+      <VehicleDeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        vehicle={selectedVehicle}
+        onConfirm={confirmDelete}
+        loading={deletingId === selectedVehicle?.veicolo_id}
+      />
     </div>
   );
 };
