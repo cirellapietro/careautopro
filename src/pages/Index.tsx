@@ -2,6 +2,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Car, LogOut, Plus, Calendar, Settings, MapPin } from 'lucide-react';
+import { VehiclesList } from '@/components/VehiclesList';
 
 const Index = () => {
   const { user, signOut } = useAuth();
@@ -32,27 +33,12 @@ const Index = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* I Miei Veicoli */}
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Car className="h-5 w-5 mr-2 text-primary" />
-                I Miei Veicoli
-              </CardTitle>
-              <CardDescription>
-                Gestisci e monitora i tuoi veicoli
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button className="w-full">
-                <Plus className="h-4 w-4 mr-2" />
-                Aggiungi Veicolo
-              </Button>
-            </CardContent>
-          </Card>
+      <main className="container mx-auto px-4 py-8 space-y-8">
+        {/* Sezione Veicoli */}
+        <VehiclesList />
 
+        {/* Cards per funzionalità rapide */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Manutenzioni */}
           <Card className="hover:shadow-lg transition-shadow cursor-pointer">
             <CardHeader>
@@ -92,7 +78,7 @@ const Index = () => {
         </div>
 
         {/* Sezione notifiche rapide */}
-        <div className="mt-8">
+        <div>
           <h2 className="text-2xl font-semibold mb-4">Notifiche Recenti</h2>
           <Card>
             <CardContent className="pt-6">
