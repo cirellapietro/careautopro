@@ -56,7 +56,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setLoading(true);
     const redirectUrl = `${window.location.origin}/`;
     
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -64,6 +64,29 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         data: metadata
       }
     });
+    
+    // Se la registrazione ha successo, inserisci l'utente nella tabella Utenti come generico
+    if (!error && data.user) {
+      try {
+        // Ottieni l'ID del profilo generico e dello stato attivo
+        const [profileResult, statusResult] = await Promise.all([
+          supabase.from('UtentiProfilo').select('profiloutente_id').eq('profiloutente', 'generico').single(),
+          supabase.from('UtentiStato').select('utentestato_id').eq('statoutente', 'attivo').single()
+        ]);
+
+        if (profileResult.data && statusResult.data) {
+          await supabase.from('Utenti').insert({
+            utente_id: data.user.id,
+            nomeutente: metadata?.username || email.split('@')[0],
+            email: email,
+            profiloutente_id: profileResult.data.profiloutente_id,
+            statoutente_id: statusResult.data.utentestato_id
+          });
+        }
+      } catch (insertError) {
+        console.error('Errore durante l\'inserimento dell\'utente:', insertError);
+      }
+    }
     
     setLoading(false);
     return { error };
