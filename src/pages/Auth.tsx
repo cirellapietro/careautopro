@@ -14,6 +14,7 @@ const Auth = () => {
   const { user, signIn, signUp, loading } = useAuth();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
+  const [activeTab, setActiveTab] = useState("signin");
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -110,6 +111,14 @@ const Auth = () => {
         title: "Registrazione completata",
         description: "Controlla la tua email per confermare l'account",
       });
+      // Reset form and switch to login tab
+      setFormData({
+        email: '',
+        password: '',
+        confirmPassword: '',
+        nomeutente: ''
+      });
+      setActiveTab("signin");
     }
   };
 
@@ -129,7 +138,7 @@ const Auth = () => {
           </CardDescription>
         </CardHeader>
         
-        <Tabs defaultValue="signin" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mx-6">
             <TabsTrigger value="signin">Accedi</TabsTrigger>
             <TabsTrigger value="signup">Registrati</TabsTrigger>
