@@ -30,17 +30,22 @@ export const useVehicles = () => {
       setLoading(true);
       setError(null);
       
-      // Query per ottenere solo i veicoli non eliminati logicamente
+      console.log('Fetching vehicles for user:', user.id);
+      
+      // Query per ottenere solo i veicoli non eliminati logicamente dell'utente corrente
       const { data, error: queryError } = await supabase
         .from('Veicoli')
         .select('*')
+        .eq('utente_id', user.id)
         .is('dataoraelimina', null)
         .order('dataora', { ascending: false });
 
       if (queryError) {
+        console.error('Supabase query error:', queryError);
         throw queryError;
       }
 
+      console.log('Vehicles fetched:', data);
       setVehicles(data || []);
     } catch (err: any) {
       console.error('Error fetching vehicles:', err);
