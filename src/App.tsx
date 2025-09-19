@@ -8,6 +8,8 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import Manutenzioni from "./pages/Manutenzioni";
+import TrackingGPS from "./pages/TrackingGPS";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +25,16 @@ const App = () => (
             <Route path="/" element={
               <ProtectedRoute>
                 <Index />
+              </ProtectedRoute>
+            } />
+            <Route path="/manutenzioni" element={
+              <ProtectedRoute>
+                <Manutenzioni />
+              </ProtectedRoute>
+            } />
+            <Route path="/tracking" element={
+              <ProtectedRoute>
+                <TrackingGPS />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

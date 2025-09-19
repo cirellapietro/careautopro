@@ -2,6 +2,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Car, LogOut, Plus, Calendar, Settings, MapPin } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { VehiclesList } from '@/components/VehiclesList';
 
 const Index = () => {
@@ -40,41 +41,45 @@ const Index = () => {
         {/* Cards per funzionalità rapide */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Manutenzioni */}
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Settings className="h-5 w-5 mr-2 text-primary" />
-                Manutenzioni
-              </CardTitle>
-              <CardDescription>
-                Programma e registra interventi
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button variant="outline" className="w-full">
-                <Calendar className="h-4 w-4 mr-2" />
-                Visualizza Calendario
-              </Button>
-            </CardContent>
-          </Card>
+          <Link to="/manutenzioni">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Settings className="h-5 w-5 mr-2 text-primary" />
+                  Manutenzioni
+                </CardTitle>
+                <CardDescription>
+                  Programma e registra interventi
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="outline" className="w-full">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Visualizza Calendario
+                </Button>
+              </CardContent>
+            </Card>
+          </Link>
 
           {/* Tracking GPS */}
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <MapPin className="h-5 w-5 mr-2 text-primary" />
-                Tracking GPS
-              </CardTitle>
-              <CardDescription>
-                Monitora km e utilizzo veicoli
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button variant="outline" className="w-full">
-                Avvia Tracking
-              </Button>
-            </CardContent>
-          </Card>
+          <Link to="/tracking">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <MapPin className="h-5 w-5 mr-2 text-primary" />
+                  Tracking GPS
+                </CardTitle>
+                <CardDescription>
+                  Monitora km e utilizzo veicoli
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="outline" className="w-full">
+                  Avvia Tracking
+                </Button>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
         {/* Sezione notifiche rapide */}
