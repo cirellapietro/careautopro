@@ -24,13 +24,16 @@ export const useVehicles = () => {
   const { user } = useAuth();
 
   const fetchVehicles = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('🔄 Nessun utente autenticato, skip caricamento veicoli');
+      return;
+    }
 
     try {
       setLoading(true);
       setError(null);
       
-      console.log('Fetching vehicles for user:', user.id);
+      console.log('🚗 Caricamento veicoli per utente:', user.id);
       
       // Query per ottenere solo i veicoli non eliminati logicamente dell'utente corrente
       const { data, error: queryError } = await supabase
@@ -40,15 +43,22 @@ export const useVehicles = () => {
         .is('dataoraelimina', null)
         .order('dataora', { ascending: false });
 
+      console.log('📊 Risultato query veicoli:', { 
+        data, 
+        error: queryError, 
+        userId: user.id,
+        numeroVeicoli: data?.length || 0
+      });
+
       if (queryError) {
-        console.error('Supabase query error:', queryError);
+        console.error('❌ Errore nella query Supabase:', queryError);
         throw queryError;
       }
 
-      console.log('Vehicles fetched:', data);
+      console.log('✅ Veicoli caricati con successo:', data?.length || 0);
       setVehicles(data || []);
     } catch (err: any) {
-      console.error('Error fetching vehicles:', err);
+      console.error('❌ Errore nel caricamento veicoli:', err);
       setError(err.message || 'Errore nel caricamento dei veicoli');
     } finally {
       setLoading(false);
@@ -56,9 +66,14 @@ export const useVehicles = () => {
   };
 
   const addVehicle = async (vehicleData: Partial<Vehicle>) => {
-    if (!user) return;
+    if (!user) {
+      console.log('❌ Nessun utente autenticato per aggiungere veicolo');
+      return;
+    }
 
     try {
+      console.log('➕ Aggiunta nuovo veicolo:', vehicleData);
+      
       const { data, error } = await supabase
         .from('Veicoli')
         .insert([{
@@ -69,12 +84,16 @@ export const useVehicles = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Errore nell\'inserimento veicolo:', error);
+        throw error;
+      }
 
+      console.log('✅ Veicolo aggiunto con successo:', data);
       setVehicles(prev => [data, ...prev]);
       return { success: true, data };
     } catch (err: any) {
-      console.error('Error adding vehicle:', err);
+      console.error('❌ Errore nell\'aggiunta veicolo:', err);
       return { success: false, error: err.message };
     }
   };

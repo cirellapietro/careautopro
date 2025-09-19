@@ -68,23 +68,45 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Se la registrazione ha successo, inserisci l'utente nella tabella Utenti come generico
     if (!error && data.user) {
       try {
+        console.log('🔄 Registrazione utente completata, creazione profilo in corso...', {
+          userId: data.user.id,
+          email: data.user.email
+        });
+
         // Ottieni l'ID del profilo generico e dello stato attivo
         const [profileResult, statusResult] = await Promise.all([
           supabase.from('UtentiProfilo').select('profiloutente_id').eq('profiloutente', 'generico').single(),
           supabase.from('UtentiStato').select('utentestato_id').eq('statoutente', 'attivo').single()
         ]);
 
+        console.log('📋 Risultati query profilo e stato:', {
+          profileResult,
+          statusResult
+        });
+
         if (profileResult.data && statusResult.data) {
-          await supabase.from('Utenti').insert({
+          // Inserisci il nuovo utente nella tabella Utenti
+          const insertResult = await supabase.from('Utenti').insert({
             utente_id: data.user.id,
             nomeutente: metadata?.username || email.split('@')[0],
             email: email,
             profiloutente_id: profileResult.data.profiloutente_id,
             statoutente_id: statusResult.data.utentestato_id
           });
+
+          console.log('✅ Utente inserito nella tabella Utenti:', insertResult);
+          
+          if (insertResult.error) {
+            console.error('❌ Errore nell\'inserimento dell\'utente:', insertResult.error);
+          }
+        } else {
+          console.error('❌ Profilo generico o stato attivo non trovati:', {
+            profile: profileResult,
+            status: statusResult
+          });
         }
       } catch (insertError) {
-        console.error('Errore durante l\'inserimento dell\'utente:', insertError);
+        console.error('❌ Errore durante l\'inserimento dell\'utente:', insertError);
       }
     }
     
