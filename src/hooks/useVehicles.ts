@@ -36,6 +36,7 @@ export const useVehicles = () => {
       console.log('🚗 Caricamento veicoli per utente:', user.id);
       
       // Query per ottenere solo i veicoli non eliminati logicamente dell'utente corrente
+      // Uso il nome corretto della tabella dal database
       const { data, error: queryError } = await supabase
         .from('Veicoli')
         .select('*')
@@ -74,6 +75,7 @@ export const useVehicles = () => {
     try {
       console.log('➕ Aggiunta nuovo veicolo:', vehicleData);
       
+      // Inserimento nel database usando il nome corretto della tabella
       const { data, error } = await supabase
         .from('Veicoli')
         .insert([{
@@ -100,6 +102,7 @@ export const useVehicles = () => {
 
   const updateVehicle = async (vehicleId: string, updates: Partial<Vehicle>) => {
     try {
+      // Aggiornamento del veicolo nel database
       const { data, error } = await supabase
         .from('Veicoli')
         .update({
@@ -124,7 +127,7 @@ export const useVehicles = () => {
 
   const deleteVehicle = async (vehicleId: string) => {
     try {
-      // Eliminazione logica
+      // Eliminazione logica del veicolo
       const { error } = await supabase
         .from('Veicoli')
         .update({ 
