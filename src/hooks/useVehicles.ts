@@ -75,14 +75,27 @@ export const useVehicles = () => {
     try {
       console.log('➕ Aggiunta nuovo veicolo:', vehicleData);
       
+      // Prima dobbiamo ottenere un tipo di veicolo valido se non è specificato
+      let tipoveicolo_id = vehicleData.tipoveicolo_id;
+      
+      if (!tipoveicolo_id) {
+        const { data: tipoVeicoli } = await supabase
+          .from('TipoVeicoli')
+          .select('tipoveicolo_id')
+          .is('dataoraelimina', null)
+          .limit(1)
+          .single();
+        
+        tipoveicolo_id = tipoVeicoli?.tipoveicolo_id;
+      }
+      
       // Inserimento nel database usando il nome corretto della tabella
-      // Aggiungiamo un tipoveicolo_id di default per permettere l'inserimento
       const { data, error } = await supabase
         .from('Veicoli')
         .insert([{
           ...vehicleData,
           utente_id: user.id,
-          tipoveicolo_id: 'default-tipo', // Useremo un valore temporaneo
+          tipoveicolo_id: tipoveicolo_id,
           dataora: new Date().toISOString()
         }])
         .select()
