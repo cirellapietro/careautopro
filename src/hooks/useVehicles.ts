@@ -76,11 +76,13 @@ export const useVehicles = () => {
       console.log('➕ Aggiunta nuovo veicolo:', vehicleData);
       
       // Inserimento nel database usando il nome corretto della tabella
+      // Aggiungiamo un tipoveicolo_id di default per permettere l'inserimento
       const { data, error } = await supabase
         .from('Veicoli')
         .insert([{
           ...vehicleData,
           utente_id: user.id,
+          tipoveicolo_id: 'default-tipo', // Useremo un valore temporaneo
           dataora: new Date().toISOString()
         }])
         .select()
