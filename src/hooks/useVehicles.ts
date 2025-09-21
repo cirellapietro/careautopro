@@ -35,14 +35,25 @@ export const useVehicles = () => {
       
       console.log('🚗 Caricamento veicoli per utente:', user.id);
       
-      // Query per ottenere solo i veicoli non eliminati logicamente dell'utente corrente
-      // Uso il nome corretto della tabella dal database
-      const { data, error: queryError } = await supabase
-        .from('Veicoli')
-        .select('*')
-        .eq('utente_id', user.id)
-        .is('dataoraelimina', null)
-        .order('dataora', { ascending: false });
+      // Prova prima con configurazione esplicita dello schema
+      let data, queryError;
+      
+      try {
+        // Query per ottenere solo i veicoli non eliminati logicamente dell'utente corrente
+        const response = await supabase
+          .from('Veicoli')
+          .select('*')
+          .eq('utente_id', user.id)
+          .is('dataoraelimina', null)
+          .order('dataora', { ascending: false });
+          
+        data = response.data;
+        queryError = response.error;
+      } catch (schemaError) {
+        console.error('❌ Errore di schema:', schemaError);
+        // Se c'è un errore di schema, impostiamo un messaggio di errore appropriato
+        throw new Error('Configurazione database non corretta. Contattare il supporto.');
+      }
 
       console.log('📊 Risultato query veicoli:', { 
         data, 
