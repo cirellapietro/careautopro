@@ -1937,6 +1937,23 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_user_vehicles: {
+        Args: { user_id: string }
+        Returns: {
+          cilindrata: number
+          dataimmatricolazione: string
+          dataora: string
+          dataoraelimina: string
+          kmanno: number
+          kmattuali: number
+          kw: number
+          nomeveicolo: string
+          targa: string
+          tipoveicolo_id: string
+          utente_id: string
+          veicolo_id: string
+        }[]
+      }
       is_admin: {
         Args: { user_id: string }
         Returns: boolean

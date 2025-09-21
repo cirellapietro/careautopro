@@ -44,21 +44,8 @@ export const useVehicles = () => {
           user_id: user.id 
         });
         
-        if (response.error) {
-          // Fallback alla query normale se la RPC non esiste
-          const fallbackResponse = await supabase
-            .from('Veicoli')
-            .select('*')
-            .eq('utente_id', user.id)
-            .is('dataoraelimina', null)
-            .order('dataora', { ascending: false });
-          
-          data = fallbackResponse.data;
-          queryError = fallbackResponse.error;
-        } else {
-          data = response.data;
-          queryError = response.error;
-        }
+        data = response.data;
+        queryError = response.error;
       } catch (schemaError) {
         console.error('❌ Errore di schema:', schemaError);
         // Se c'è un errore di schema, impostiamo un messaggio di errore appropriato
