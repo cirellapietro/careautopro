@@ -75,8 +75,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
         // Ottieni l'ID del profilo generico e dello stato attivo
         const [profileResult, statusResult] = await Promise.all([
-          supabase.from('UtentiProfilo').select('profiloutente_id').eq('profiloutente', 'generico').single(),
-          supabase.from('UtentiStato').select('utentestato_id').eq('statoutente', 'attivo').single()
+          supabase.from('utentiprofilo').select('profiloutente_id').eq('profiloutente', 'generico').single(),
+          supabase.from('utentistato').select('utentestato_id').eq('statoutente', 'attivo').single()
         ]);
 
         console.log('📋 Risultati query profilo e stato:', {
@@ -86,7 +86,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
         if (profileResult.data && statusResult.data) {
           // Inserisci il nuovo utente nella tabella Utenti
-          const insertResult = await supabase.from('Utenti').insert({
+          const insertResult = await supabase.from('utenti').insert({
             utente_id: data.user.id,
             nomeutente: metadata?.username || email.split('@')[0],
             email: email,

@@ -88,7 +88,7 @@ export const useVehicles = () => {
       
       if (!tipoveicolo_id) {
         const { data: tipoVeicoli } = await supabase
-          .from('TipoVeicoli')
+          .from('tipoveicoli')
           .select('tipoveicolo_id')
           .is('dataoraelimina', null)
           .limit(1)
@@ -99,7 +99,7 @@ export const useVehicles = () => {
       
       // Inserimento nel database usando il nome corretto della tabella
       const { data, error } = await supabase
-        .from('Veicoli')
+        .from('veicoli')
         .insert([{
           ...vehicleData,
           utente_id: user.id,
@@ -127,7 +127,7 @@ export const useVehicles = () => {
     try {
       // Aggiornamento del veicolo nel database
       const { data, error } = await supabase
-        .from('Veicoli')
+        .from('veicoli')
         .update({
           ...updates,
           dataora: new Date().toISOString()
@@ -152,7 +152,7 @@ export const useVehicles = () => {
     try {
       // Eliminazione logica del veicolo
       const { error } = await supabase
-        .from('Veicoli')
+        .from('veicoli')
         .update({ 
           dataoraelimina: new Date().toISOString() 
         })

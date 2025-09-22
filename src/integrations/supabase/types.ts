@@ -14,7 +14,7 @@ export type Database = {
   }
   public: {
     Tables: {
-      AvvisiGruppo: {
+      avvisigruppo: {
         Row: {
           avviso_id: string
           dataora: string | null
@@ -53,7 +53,7 @@ export type Database = {
             foreignKeyName: "AvvisiGruppo_tipoveicolo_id_fkey"
             columns: ["tipoveicolo_id"]
             isOneToOne: false
-            referencedRelation: "TipoVeicoli"
+            referencedRelation: "tipoveicoli"
             referencedColumns: ["tipoveicolo_id"]
           },
           {
@@ -65,7 +65,7 @@ export type Database = {
           },
         ]
       }
-      CoincidenzaDi: {
+      coincidenzadi: {
         Row: {
           dataoraelimina: string | null
           descrizione: string
@@ -83,7 +83,7 @@ export type Database = {
         }
         Relationships: []
       }
-      Config: {
+      config: {
         Row: {
           adMobAdUnitId: string | null
           adMobAppId: string | null
@@ -209,7 +209,7 @@ export type Database = {
         }
         Relationships: []
       }
-      ControlliPeriodici: {
+      controlliperiodici: {
         Row: {
           akm: number | null
           amesi: number | null
@@ -269,35 +269,35 @@ export type Database = {
             foreignKeyName: "ControlliPeriodici_incoincidenzadi_fkey"
             columns: ["incoincidenzadi"]
             isOneToOne: false
-            referencedRelation: "CoincidenzaDi"
+            referencedRelation: "coincidenzadi"
             referencedColumns: ["inconcidenzadi_id"]
           },
           {
             foreignKeyName: "ControlliPeriodici_incoincidenzadi_fkey"
             columns: ["incoincidenzadi"]
             isOneToOne: false
-            referencedRelation: "v_CoincidenzaDi"
+            referencedRelation: "v_coincidenzadi"
             referencedColumns: ["inconcidenzadi_id"]
           },
           {
             foreignKeyName: "ControlliPeriodici_operazione_id_fkey"
             columns: ["operazione_id"]
             isOneToOne: false
-            referencedRelation: "Operazioni"
+            referencedRelation: "operazioni"
             referencedColumns: ["operazione_id"]
           },
           {
             foreignKeyName: "ControlliPeriodici_operazione_id_fkey"
             columns: ["operazione_id"]
             isOneToOne: false
-            referencedRelation: "v_Operazioni"
+            referencedRelation: "v_operazioni"
             referencedColumns: ["operazione_id"]
           },
           {
             foreignKeyName: "ControlliPeriodici_tipoveicolo_id_fkey"
             columns: ["tipoveicolo_id"]
             isOneToOne: false
-            referencedRelation: "TipoVeicoli"
+            referencedRelation: "tipoveicoli"
             referencedColumns: ["tipoveicolo_id"]
           },
           {
@@ -309,7 +309,7 @@ export type Database = {
           },
         ]
       }
-      ImpostazioniTracking: {
+      impostazionitracking: {
         Row: {
           dataora: string | null
           dataoraelimina: string | null
@@ -351,14 +351,14 @@ export type Database = {
             foreignKeyName: "ImpostazioniTracking_utente_id_fkey"
             columns: ["utente_id"]
             isOneToOne: false
-            referencedRelation: "Utenti"
+            referencedRelation: "utenti"
             referencedColumns: ["utente_id"]
           },
           {
             foreignKeyName: "ImpostazioniTracking_utente_id_fkey"
             columns: ["utente_id"]
             isOneToOne: false
-            referencedRelation: "v_Utenti"
+            referencedRelation: "v_utenti"
             referencedColumns: ["utente_id"]
           },
           {
@@ -372,19 +372,19 @@ export type Database = {
             foreignKeyName: "ImpostazioniTracking_veicolo_id_fkey"
             columns: ["veicolo_id"]
             isOneToOne: false
-            referencedRelation: "v_Veicoli"
+            referencedRelation: "v_veicoli"
             referencedColumns: ["veicolo_id"]
           },
           {
             foreignKeyName: "ImpostazioniTracking_veicolo_id_fkey"
             columns: ["veicolo_id"]
             isOneToOne: false
-            referencedRelation: "Veicoli"
+            referencedRelation: "veicoli"
             referencedColumns: ["veicolo_id"]
           },
         ]
       }
-      Interventi: {
+      interventi: {
         Row: {
           batchid: string | null
           controlloperiodico_id: string | null
@@ -429,28 +429,28 @@ export type Database = {
             foreignKeyName: "Interventi_controlloperiodico_id_fkey"
             columns: ["controlloperiodico_id"]
             isOneToOne: false
-            referencedRelation: "ControlliPeriodici"
+            referencedRelation: "controlliperiodici"
             referencedColumns: ["controlloperiodico_id"]
           },
           {
             foreignKeyName: "Interventi_controlloperiodico_id_fkey"
             columns: ["controlloperiodico_id"]
             isOneToOne: false
-            referencedRelation: "v_ControlliPeriodici"
+            referencedRelation: "v_controlliperiodici"
             referencedColumns: ["controlloperiodico_id"]
           },
           {
             foreignKeyName: "Interventi_interventistato_id_fkey"
             columns: ["interventistato_id"]
             isOneToOne: false
-            referencedRelation: "InterventiStato"
+            referencedRelation: "interventistato"
             referencedColumns: ["interventistato_id"]
           },
           {
             foreignKeyName: "Interventi_interventistato_id_fkey"
             columns: ["interventistato_id"]
             isOneToOne: false
-            referencedRelation: "v_InterventiStato"
+            referencedRelation: "v_interventistato"
             referencedColumns: ["interventistato_id"]
           },
           {
@@ -464,19 +464,19 @@ export type Database = {
             foreignKeyName: "Interventi_veicolo_id_fkey"
             columns: ["veicolo_id"]
             isOneToOne: false
-            referencedRelation: "v_Veicoli"
+            referencedRelation: "v_veicoli"
             referencedColumns: ["veicolo_id"]
           },
           {
             foreignKeyName: "Interventi_veicolo_id_fkey"
             columns: ["veicolo_id"]
             isOneToOne: false
-            referencedRelation: "Veicoli"
+            referencedRelation: "veicoli"
             referencedColumns: ["veicolo_id"]
           },
         ]
       }
-      InterventiStato: {
+      interventistato: {
         Row: {
           dataoraelimina: string | null
           descrizione: string
@@ -506,7 +506,7 @@ export type Database = {
         }
         Relationships: []
       }
-      Logs: {
+      logs: {
         Row: {
           batchid: string | null
           dataora: string | null
@@ -584,28 +584,28 @@ export type Database = {
             foreignKeyName: "MessaggiAvviso_intervento_id_fkey"
             columns: ["intervento_id"]
             isOneToOne: false
-            referencedRelation: "Interventi"
+            referencedRelation: "interventi"
             referencedColumns: ["intervento_id"]
           },
           {
             foreignKeyName: "MessaggiAvviso_intervento_id_fkey"
             columns: ["intervento_id"]
             isOneToOne: false
-            referencedRelation: "v_Interventi"
+            referencedRelation: "v_interventi"
             referencedColumns: ["intervento_id"]
           },
           {
             foreignKeyName: "MessaggiAvviso_utente_id_fkey"
             columns: ["utente_id"]
             isOneToOne: false
-            referencedRelation: "Utenti"
+            referencedRelation: "utenti"
             referencedColumns: ["utente_id"]
           },
           {
             foreignKeyName: "MessaggiAvviso_utente_id_fkey"
             columns: ["utente_id"]
             isOneToOne: false
-            referencedRelation: "v_Utenti"
+            referencedRelation: "v_utenti"
             referencedColumns: ["utente_id"]
           },
           {
@@ -619,19 +619,19 @@ export type Database = {
             foreignKeyName: "MessaggiAvviso_veicolo_id_fkey"
             columns: ["veicolo_id"]
             isOneToOne: false
-            referencedRelation: "v_Veicoli"
+            referencedRelation: "v_veicoli"
             referencedColumns: ["veicolo_id"]
           },
           {
             foreignKeyName: "MessaggiAvviso_veicolo_id_fkey"
             columns: ["veicolo_id"]
             isOneToOne: false
-            referencedRelation: "Veicoli"
+            referencedRelation: "veicoli"
             referencedColumns: ["veicolo_id"]
           },
         ]
       }
-      Operazioni: {
+      operazioni: {
         Row: {
           dataoraelimina: string | null
           descrizione: string
@@ -661,7 +661,7 @@ export type Database = {
         }
         Relationships: []
       }
-      SessioniUtilizzo: {
+      sessioniutilizzo: {
         Row: {
           dataora: string | null
           dataora_fine: string | null
@@ -724,14 +724,14 @@ export type Database = {
             foreignKeyName: "SessioniUtilizzo_utente_id_fkey"
             columns: ["utente_id"]
             isOneToOne: false
-            referencedRelation: "Utenti"
+            referencedRelation: "utenti"
             referencedColumns: ["utente_id"]
           },
           {
             foreignKeyName: "SessioniUtilizzo_utente_id_fkey"
             columns: ["utente_id"]
             isOneToOne: false
-            referencedRelation: "v_Utenti"
+            referencedRelation: "v_utenti"
             referencedColumns: ["utente_id"]
           },
           {
@@ -745,19 +745,19 @@ export type Database = {
             foreignKeyName: "SessioniUtilizzo_veicolo_id_fkey"
             columns: ["veicolo_id"]
             isOneToOne: false
-            referencedRelation: "v_Veicoli"
+            referencedRelation: "v_veicoli"
             referencedColumns: ["veicolo_id"]
           },
           {
             foreignKeyName: "SessioniUtilizzo_veicolo_id_fkey"
             columns: ["veicolo_id"]
             isOneToOne: false
-            referencedRelation: "Veicoli"
+            referencedRelation: "veicoli"
             referencedColumns: ["veicolo_id"]
           },
         ]
       }
-      TipoNotificaAvviso: {
+      tiponotificaavviso: {
         Row: {
           dataoraelimina: string | null
           descrizione: string
@@ -775,7 +775,7 @@ export type Database = {
         }
         Relationships: []
       }
-      TipoVeicoli: {
+      tipoveicoli: {
         Row: {
           dataoraelimina: string | null
           descrizione: string
@@ -793,7 +793,7 @@ export type Database = {
         }
         Relationships: []
       }
-      TrackingGPS: {
+      trackinggps: {
         Row: {
           dataora: string | null
           direzione: number | null
@@ -829,12 +829,12 @@ export type Database = {
             foreignKeyName: "TrackingGPS_sessione_id_fkey"
             columns: ["sessione_id"]
             isOneToOne: false
-            referencedRelation: "SessioniUtilizzo"
+            referencedRelation: "sessioniutilizzo"
             referencedColumns: ["sessione_id"]
           },
         ]
       }
-      Utenti: {
+      utenti: {
         Row: {
           abilitagps: boolean | null
           dataora: string | null
@@ -888,47 +888,47 @@ export type Database = {
             foreignKeyName: "Utenti_profiloutente_id_fkey"
             columns: ["profiloutente_id"]
             isOneToOne: false
-            referencedRelation: "UtentiProfilo"
+            referencedRelation: "utentiprofilo"
             referencedColumns: ["profiloutente_id"]
           },
           {
             foreignKeyName: "Utenti_profiloutente_id_fkey"
             columns: ["profiloutente_id"]
             isOneToOne: false
-            referencedRelation: "v_UtentiProfilo"
+            referencedRelation: "v_utentiprofilo"
             referencedColumns: ["profiloutente_id"]
           },
           {
             foreignKeyName: "Utenti_statoutente_id_fkey"
             columns: ["statoutente_id"]
             isOneToOne: false
-            referencedRelation: "UtentiStato"
+            referencedRelation: "utentistato"
             referencedColumns: ["utentestato_id"]
           },
           {
             foreignKeyName: "Utenti_statoutente_id_fkey"
             columns: ["statoutente_id"]
             isOneToOne: false
-            referencedRelation: "v_UtentiStato"
+            referencedRelation: "v_utentistato"
             referencedColumns: ["utentestato_id"]
           },
           {
             foreignKeyName: "Utenti_tiponotificaavviso_id_fkey"
             columns: ["tiponotificaavviso_id"]
             isOneToOne: false
-            referencedRelation: "TipoNotificaAvviso"
+            referencedRelation: "tiponotificaavviso"
             referencedColumns: ["tiponotificaavviso_id"]
           },
           {
             foreignKeyName: "Utenti_tiponotificaavviso_id_fkey"
             columns: ["tiponotificaavviso_id"]
             isOneToOne: false
-            referencedRelation: "v_TipoNotificaAvviso"
+            referencedRelation: "v_tiponotificaavviso"
             referencedColumns: ["tiponotificaavviso_id"]
           },
         ]
       }
-      UtentiProfilo: {
+      utentiprofilo: {
         Row: {
           dataora: string | null
           dataoraelimina: string | null
@@ -949,7 +949,7 @@ export type Database = {
         }
         Relationships: []
       }
-      UtentiStato: {
+      utentistato: {
         Row: {
           dataora: string | null
           dataoraelimina: string | null
@@ -970,7 +970,7 @@ export type Database = {
         }
         Relationships: []
       }
-      Veicoli: {
+      veicoli: {
         Row: {
           cilindrata: number | null
           dataimmatricolazione: string | null
@@ -1048,14 +1048,14 @@ export type Database = {
             foreignKeyName: "Veicoli_sessione_attiva_fkey"
             columns: ["sessione_attiva_id"]
             isOneToOne: false
-            referencedRelation: "SessioniUtilizzo"
+            referencedRelation: "sessioniutilizzo"
             referencedColumns: ["sessione_id"]
           },
           {
             foreignKeyName: "Veicoli_tipoveicolo_id_fkey"
             columns: ["tipoveicolo_id"]
             isOneToOne: false
-            referencedRelation: "TipoVeicoli"
+            referencedRelation: "tipoveicoli"
             referencedColumns: ["tipoveicolo_id"]
           },
           {
@@ -1069,14 +1069,14 @@ export type Database = {
             foreignKeyName: "Veicoli_utente_id_fkey"
             columns: ["utente_id"]
             isOneToOne: false
-            referencedRelation: "Utenti"
+            referencedRelation: "utenti"
             referencedColumns: ["utente_id"]
           },
           {
             foreignKeyName: "Veicoli_utente_id_fkey"
             columns: ["utente_id"]
             isOneToOne: false
-            referencedRelation: "v_Utenti"
+            referencedRelation: "v_utenti"
             referencedColumns: ["utente_id"]
           },
         ]
@@ -1098,7 +1098,7 @@ export type Database = {
         }
         Relationships: []
       }
-      v_AvvisiGruppo: {
+      v_avvisigruppo: {
         Row: {
           avviso_id: string | null
           dataora: string | null
@@ -1137,7 +1137,7 @@ export type Database = {
             foreignKeyName: "AvvisiGruppo_tipoveicolo_id_fkey"
             columns: ["tipoveicolo_id"]
             isOneToOne: false
-            referencedRelation: "TipoVeicoli"
+            referencedRelation: "tipoveicoli"
             referencedColumns: ["tipoveicolo_id"]
           },
           {
@@ -1149,7 +1149,7 @@ export type Database = {
           },
         ]
       }
-      v_CoincidenzaDi: {
+      v_coincidenzadi: {
         Row: {
           dataoraelimina: string | null
           descrizione: string | null
@@ -1167,7 +1167,7 @@ export type Database = {
         }
         Relationships: []
       }
-      v_Config: {
+      v_config: {
         Row: {
           admobidapp: string | null
           admobidpublisher: string | null
@@ -1275,7 +1275,7 @@ export type Database = {
         }
         Relationships: []
       }
-      v_ControlliPeriodici: {
+      v_controlliperiodici: {
         Row: {
           akm: number | null
           amesi: number | null
@@ -1335,35 +1335,35 @@ export type Database = {
             foreignKeyName: "ControlliPeriodici_incoincidenzadi_fkey"
             columns: ["incoincidenzadi"]
             isOneToOne: false
-            referencedRelation: "CoincidenzaDi"
+            referencedRelation: "coincidenzadi"
             referencedColumns: ["inconcidenzadi_id"]
           },
           {
             foreignKeyName: "ControlliPeriodici_incoincidenzadi_fkey"
             columns: ["incoincidenzadi"]
             isOneToOne: false
-            referencedRelation: "v_CoincidenzaDi"
+            referencedRelation: "v_coincidenzadi"
             referencedColumns: ["inconcidenzadi_id"]
           },
           {
             foreignKeyName: "ControlliPeriodici_operazione_id_fkey"
             columns: ["operazione_id"]
             isOneToOne: false
-            referencedRelation: "Operazioni"
+            referencedRelation: "operazioni"
             referencedColumns: ["operazione_id"]
           },
           {
             foreignKeyName: "ControlliPeriodici_operazione_id_fkey"
             columns: ["operazione_id"]
             isOneToOne: false
-            referencedRelation: "v_Operazioni"
+            referencedRelation: "v_operazioni"
             referencedColumns: ["operazione_id"]
           },
           {
             foreignKeyName: "ControlliPeriodici_tipoveicolo_id_fkey"
             columns: ["tipoveicolo_id"]
             isOneToOne: false
-            referencedRelation: "TipoVeicoli"
+            referencedRelation: "tipoveicoli"
             referencedColumns: ["tipoveicolo_id"]
           },
           {
@@ -1375,7 +1375,7 @@ export type Database = {
           },
         ]
       }
-      v_Interventi: {
+      v_interventi: {
         Row: {
           batchid: string | null
           controlloperiodico_id: string | null
@@ -1420,28 +1420,28 @@ export type Database = {
             foreignKeyName: "Interventi_controlloperiodico_id_fkey"
             columns: ["controlloperiodico_id"]
             isOneToOne: false
-            referencedRelation: "ControlliPeriodici"
+            referencedRelation: "controlliperiodici"
             referencedColumns: ["controlloperiodico_id"]
           },
           {
             foreignKeyName: "Interventi_controlloperiodico_id_fkey"
             columns: ["controlloperiodico_id"]
             isOneToOne: false
-            referencedRelation: "v_ControlliPeriodici"
+            referencedRelation: "v_controlliperiodici"
             referencedColumns: ["controlloperiodico_id"]
           },
           {
             foreignKeyName: "Interventi_interventistato_id_fkey"
             columns: ["interventistato_id"]
             isOneToOne: false
-            referencedRelation: "InterventiStato"
+            referencedRelation: "interventistato"
             referencedColumns: ["interventistato_id"]
           },
           {
             foreignKeyName: "Interventi_interventistato_id_fkey"
             columns: ["interventistato_id"]
             isOneToOne: false
-            referencedRelation: "v_InterventiStato"
+            referencedRelation: "v_interventistato"
             referencedColumns: ["interventistato_id"]
           },
           {
@@ -1455,19 +1455,19 @@ export type Database = {
             foreignKeyName: "Interventi_veicolo_id_fkey"
             columns: ["veicolo_id"]
             isOneToOne: false
-            referencedRelation: "v_Veicoli"
+            referencedRelation: "v_veicoli"
             referencedColumns: ["veicolo_id"]
           },
           {
             foreignKeyName: "Interventi_veicolo_id_fkey"
             columns: ["veicolo_id"]
             isOneToOne: false
-            referencedRelation: "Veicoli"
+            referencedRelation: "veicoli"
             referencedColumns: ["veicolo_id"]
           },
         ]
       }
-      v_InterventiStato: {
+      v_interventistato: {
         Row: {
           dataoraelimina: string | null
           descrizione: string | null
@@ -1497,7 +1497,7 @@ export type Database = {
         }
         Relationships: []
       }
-      v_Logs: {
+      v_logs: {
         Row: {
           batchid: string | null
           dataora: string | null
@@ -1530,7 +1530,7 @@ export type Database = {
         }
         Relationships: []
       }
-      v_MessaggiAvviso: {
+      v_messaggiavviso: {
         Row: {
           batchid: string | null
           dataora: string | null
@@ -1575,28 +1575,28 @@ export type Database = {
             foreignKeyName: "MessaggiAvviso_intervento_id_fkey"
             columns: ["intervento_id"]
             isOneToOne: false
-            referencedRelation: "Interventi"
+            referencedRelation: "interventi"
             referencedColumns: ["intervento_id"]
           },
           {
             foreignKeyName: "MessaggiAvviso_intervento_id_fkey"
             columns: ["intervento_id"]
             isOneToOne: false
-            referencedRelation: "v_Interventi"
+            referencedRelation: "v_interventi"
             referencedColumns: ["intervento_id"]
           },
           {
             foreignKeyName: "MessaggiAvviso_utente_id_fkey"
             columns: ["utente_id"]
             isOneToOne: false
-            referencedRelation: "Utenti"
+            referencedRelation: "utenti"
             referencedColumns: ["utente_id"]
           },
           {
             foreignKeyName: "MessaggiAvviso_utente_id_fkey"
             columns: ["utente_id"]
             isOneToOne: false
-            referencedRelation: "v_Utenti"
+            referencedRelation: "v_utenti"
             referencedColumns: ["utente_id"]
           },
           {
@@ -1610,19 +1610,19 @@ export type Database = {
             foreignKeyName: "MessaggiAvviso_veicolo_id_fkey"
             columns: ["veicolo_id"]
             isOneToOne: false
-            referencedRelation: "v_Veicoli"
+            referencedRelation: "v_veicoli"
             referencedColumns: ["veicolo_id"]
           },
           {
             foreignKeyName: "MessaggiAvviso_veicolo_id_fkey"
             columns: ["veicolo_id"]
             isOneToOne: false
-            referencedRelation: "Veicoli"
+            referencedRelation: "veicoli"
             referencedColumns: ["veicolo_id"]
           },
         ]
       }
-      v_Operazioni: {
+      v_operazioni: {
         Row: {
           dataoraelimina: string | null
           descrizione: string | null
@@ -1652,7 +1652,7 @@ export type Database = {
         }
         Relationships: []
       }
-      v_TipoNotificaAvviso: {
+      v_tiponotificaavviso: {
         Row: {
           dataoraelimina: string | null
           descrizione: string | null
@@ -1688,7 +1688,7 @@ export type Database = {
         }
         Relationships: []
       }
-      v_Utenti: {
+      v_utenti: {
         Row: {
           abilitagps: boolean | null
           dataora: string | null
@@ -1742,47 +1742,47 @@ export type Database = {
             foreignKeyName: "Utenti_profiloutente_id_fkey"
             columns: ["profiloutente_id"]
             isOneToOne: false
-            referencedRelation: "UtentiProfilo"
+            referencedRelation: "utentiprofilo"
             referencedColumns: ["profiloutente_id"]
           },
           {
             foreignKeyName: "Utenti_profiloutente_id_fkey"
             columns: ["profiloutente_id"]
             isOneToOne: false
-            referencedRelation: "v_UtentiProfilo"
+            referencedRelation: "v_utentiprofilo"
             referencedColumns: ["profiloutente_id"]
           },
           {
             foreignKeyName: "Utenti_statoutente_id_fkey"
             columns: ["statoutente_id"]
             isOneToOne: false
-            referencedRelation: "UtentiStato"
+            referencedRelation: "utentistato"
             referencedColumns: ["utentestato_id"]
           },
           {
             foreignKeyName: "Utenti_statoutente_id_fkey"
             columns: ["statoutente_id"]
             isOneToOne: false
-            referencedRelation: "v_UtentiStato"
+            referencedRelation: "v_utentistato"
             referencedColumns: ["utentestato_id"]
           },
           {
             foreignKeyName: "Utenti_tiponotificaavviso_id_fkey"
             columns: ["tiponotificaavviso_id"]
             isOneToOne: false
-            referencedRelation: "TipoNotificaAvviso"
+            referencedRelation: "tiponotificaavviso"
             referencedColumns: ["tiponotificaavviso_id"]
           },
           {
             foreignKeyName: "Utenti_tiponotificaavviso_id_fkey"
             columns: ["tiponotificaavviso_id"]
             isOneToOne: false
-            referencedRelation: "v_TipoNotificaAvviso"
+            referencedRelation: "v_tiponotificaavviso"
             referencedColumns: ["tiponotificaavviso_id"]
           },
         ]
       }
-      v_UtentiProfilo: {
+      v_utentiprofilo: {
         Row: {
           dataora: string | null
           dataoraelimina: string | null
@@ -1803,7 +1803,7 @@ export type Database = {
         }
         Relationships: []
       }
-      v_UtentiStato: {
+      v_utentistato: {
         Row: {
           dataora: string | null
           dataoraelimina: string | null
@@ -1824,7 +1824,7 @@ export type Database = {
         }
         Relationships: []
       }
-      v_Veicoli: {
+      v_veicoli: {
         Row: {
           cilindrata: number | null
           dataimmatricolazione: string | null
@@ -1896,7 +1896,7 @@ export type Database = {
             foreignKeyName: "Veicoli_tipoveicolo_id_fkey"
             columns: ["tipoveicolo_id"]
             isOneToOne: false
-            referencedRelation: "TipoVeicoli"
+            referencedRelation: "tipoveicoli"
             referencedColumns: ["tipoveicolo_id"]
           },
           {
@@ -1910,14 +1910,14 @@ export type Database = {
             foreignKeyName: "Veicoli_utente_id_fkey"
             columns: ["utente_id"]
             isOneToOne: false
-            referencedRelation: "Utenti"
+            referencedRelation: "utenti"
             referencedColumns: ["utente_id"]
           },
           {
             foreignKeyName: "Veicoli_utente_id_fkey"
             columns: ["utente_id"]
             isOneToOne: false
-            referencedRelation: "v_Utenti"
+            referencedRelation: "v_utenti"
             referencedColumns: ["utente_id"]
           },
         ]

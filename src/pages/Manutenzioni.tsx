@@ -40,7 +40,7 @@ const Manutenzioni = () => {
       console.log('🔧 Caricamento manutenzioni per utente:', user.id);
 
       const { data, error } = await supabase
-        .from('Interventi')
+        .from('interventi')
         .select(`
           intervento_id,
           dataoraintervento,
@@ -48,13 +48,13 @@ const Manutenzioni = () => {
           descrizioneaggiuntiva,
           controlloperiodico_id,
           veicolo_id,
-          ControlliPeriodici!inner(
+          controlliperiodici!inner(
             nomecontrollo,
             descrizione,
             frequenzakm,
             frequenzamesi
           ),
-          Veicoli!inner(
+          veicoli!inner(
             nomeveicolo,
             targa,
             kmattuali,
@@ -78,13 +78,13 @@ const Manutenzioni = () => {
         descrizioneaggiuntiva: item.descrizioneaggiuntiva,
         controlloperiodico_id: item.controlloperiodico_id,
         veicolo_id: item.veicolo_id,
-        nomecontrollo: item.ControlliPeriodici.nomecontrollo,
-        descrizione: item.ControlliPeriodici.descrizione,
-        frequenzakm: item.ControlliPeriodici.frequenzakm,
-        frequenzamesi: item.ControlliPeriodici.frequenzamesi,
-        nomeveicolo: item.Veicoli.nomeveicolo,
-        targa: item.Veicoli.targa,
-        kmattuali: item.Veicoli.kmattuali
+        nomecontrollo: item.controlliperiodici.nomecontrollo,
+        descrizione: item.controlliperiodici.descrizione,
+        frequenzakm: item.controlliperiodici.frequenzakm,
+        frequenzamesi: item.controlliperiodici.frequenzamesi,
+        nomeveicolo: item.veicoli.nomeveicolo,
+        targa: item.veicoli.targa,
+        kmattuali: item.veicoli.kmattuali
       })) || [];
 
       console.log('✅ Manutenzioni caricate:', manutenzioniFormattate.length);

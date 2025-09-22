@@ -47,7 +47,7 @@ const TrackingGPS = () => {
       console.log('🗺️ Caricamento sessioni GPS per utente:', user.id);
 
       const { data, error } = await supabase
-        .from('SessioniUtilizzo')
+        .from('sessioniutilizzo')
         .select(`
           sessione_id,
           veicolo_id,
@@ -63,7 +63,7 @@ const TrackingGPS = () => {
           posizione_fine_lng,
           note,
           sessione_attiva,
-          Veicoli!inner(
+          veicoli!inner(
             nomeveicolo,
             targa,
             utente_id
@@ -94,8 +94,8 @@ const TrackingGPS = () => {
         posizione_fine_lng: item.posizione_fine_lng,
         note: item.note,
         sessione_attiva: item.sessione_attiva,
-        nomeveicolo: item.Veicoli.nomeveicolo,
-        targa: item.Veicoli.targa
+        nomeveicolo: item.veicoli.nomeveicolo,
+        targa: item.veicoli.targa
       })) || [];
 
       console.log('✅ Sessioni caricate:', sessioniFormattate.length);
@@ -132,7 +132,7 @@ const TrackingGPS = () => {
 
       // Controlla se ci sono già sessioni attive per questo veicolo
       const { data: sessioniAttive } = await supabase
-        .from('SessioniUtilizzo')
+        .from('sessioniutilizzo')
         .select('sessione_id')
         .eq('veicolo_id', veicoloSelezionato)
         .eq('sessione_attiva', true)
@@ -171,7 +171,7 @@ const TrackingGPS = () => {
 
       // Crea la nuova sessione
       const { data, error } = await supabase
-        .from('SessioniUtilizzo')
+        .from('sessioniutilizzo')
         .insert({
           veicolo_id: veicoloSelezionato,
           utente_id: user.id,
@@ -192,7 +192,7 @@ const TrackingGPS = () => {
       
       // Aggiorna il veicolo con la sessione attiva
       await supabase
-        .from('Veicoli')
+        .from('veicoli')
         .update({ 
           sessione_attiva_id: data.sessione_id,
           ultimo_aggiornamento_tracking: new Date().toISOString()
@@ -251,7 +251,7 @@ const TrackingGPS = () => {
 
       // Aggiorna la sessione
       const { error } = await supabase
-        .from('SessioniUtilizzo')
+        .from('sessioniutilizzo')
         .update({
           dataora_fine: dataFine.toISOString(),
           posizione_fine_lat: posizioneLat,
@@ -268,7 +268,7 @@ const TrackingGPS = () => {
 
       // Rimuovi la sessione attiva dal veicolo
       await supabase
-        .from('Veicoli')
+        .from('veicoli')
         .update({ 
           sessione_attiva_id: null,
           ultimo_aggiornamento_tracking: new Date().toISOString()
