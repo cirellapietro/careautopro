@@ -15,12 +15,12 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     autoRefreshToken: true,
   },
   db: {
-    schema: 'public'
+    schema: 'api'
   },
   global: {
     headers: {
-      'Accept-Profile': 'public',
-      'Content-Profile': 'public'
+      'Accept-Profile': 'api',
+      'Content-Profile': 'api'
     }
   }
 });
