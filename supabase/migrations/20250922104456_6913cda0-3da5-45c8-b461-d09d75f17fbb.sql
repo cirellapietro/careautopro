@@ -19,7 +19,7 @@ BEGIN
         v.kw,
         v.dataora,
         v.dataoraelimina
-    FROM "Veicoli" v
+    FROM "veicoli" v
     WHERE v.utente_id = get_user_vehicles.user_id
     AND v.dataoraelimina IS NULL
     ORDER BY v.dataora DESC;
