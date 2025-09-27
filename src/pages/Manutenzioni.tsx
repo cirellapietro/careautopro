@@ -61,7 +61,7 @@ const Manutenzioni = () => {
             utente_id
           )
         `)
-        .eq('Veicoli.utente_id', user.id)
+        .eq('veicoli.utente_id', user.id)
         .is('dataoraelimina', null)
         .order('dataoraintervento', { ascending: false });
 
