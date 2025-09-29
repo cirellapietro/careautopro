@@ -9,4 +9,4 @@ NOTIFY pgrst, 'reload schema';
 SELECT schemaname, tablename 
 FROM pg_tables 
 WHERE schemaname = 'public' 
-AND tablename IN ('Veicoli', 'Utenti', 'TipoVeicoli');
+AND tablename IN ('vecoli', 'utenti', 'tipoveicoli');.com
