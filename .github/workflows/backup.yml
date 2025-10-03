@@ -1,0 +1,48 @@
+name: Backup Automatico Branch Sviluppo
+
+on:
+  push:
+    branches: [ sviluppo ]
+  schedule:
+    # Esegue ogni giorno alle 00:00 (mezzanotte) UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch: # Permette l'avvio manuale
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout codice
+      uses: actions/checkout@v4
+      with:
+        ref: sviluppo
+        
+    - name: Crea backup ZIP
+      run: |
+        # Crea nome file con data e commit
+        TIMESTAMP=$(date +'%Y%m%d_%H%M%S')
+        COMMIT_SHORT=$(git rev-parse --short HEAD)
+        ZIP_NAME="backup_sviluppo_${TIMESTAMP}_${COMMIT_SHORT}.zip"
+        
+        # Crea il file ZIP
+        zip -r $ZIP_NAME . -x "*.git*" "node_modules/*" ".github/*"
+        
+        # Mostra informazioni sul backup
+        echo "Backup creato: $ZIP_NAME"
+        echo "Dimensione: $(du -h $ZIP_NAME | cut -f1)"
+        
+        # Salva il nome del file per il passo successivo
+        echo "ZIP_NAME=$ZIP_NAME" >> $GITHUB_ENV
+        
+    - name: Upload backup come artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: backup-sviluppo
+        path: ${{ env.ZIP_NAME }}
+        retention-days: 30
+        
+    - name: Notifica successo
+      run: |
+        echo "✅ Backup creato con successo: ${{ env.ZIP_NAME }}"
+        echo "📁 Scaricalo dalla sezione Artifacts di questa esecuzione"
