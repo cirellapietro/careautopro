@@ -1,15 +1,14 @@
-src/App.jsx
+//src/App.jsx
 
-```javascript
-// src/App.jsx
-import React from 'react'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
+import Layout from './components/Layout'
 import Login from './components/Login'
 import Dashboard from './components/Dashboard'
 import Veicoli from './components/Veicoli'
 import Manutenzioni from './components/Manutenzioni'
+import Profile from './components/Profile'
 
 function App() {
   return (
@@ -19,26 +18,18 @@ function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route 
-              path="/" 
+              path="/*" 
               element={
                 <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/veicoli" 
-              element={
-                <ProtectedRoute>
-                  <Veicoli />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/manutenzioni" 
-              element={
-                <ProtectedRoute>
-                  <Manutenzioni />
+                  <Layout>
+                    <Routes>
+                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/veicoli" element={<Veicoli />} />
+                      <Route path="/manutenzioni" element={<Manutenzioni />} />
+                      <Route path="/profile" element={<Profile />} />
+                      <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
+                  </Layout>
                 </ProtectedRoute>
               } 
             />
