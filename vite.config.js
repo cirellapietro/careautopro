@@ -2,7 +2,6 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 import { VitePWA } from 'vite-plugin-pwa'
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     react(),
@@ -11,7 +10,7 @@ export default defineConfig({
       manifest: {
         name: 'CareAutoPro',
         short_name: 'CareAutoPro',
-        description: 'Gestione veicoli e manutenzioni con tracking GPS',
+        description: 'Gestione veicoli e manutenzioni',
         theme_color: '#2563eb',
         icons: [
           {
@@ -25,18 +24,6 @@ export default defineConfig({
             type: 'image/png'
           }
         ]
-      },
-      workbox: {
-        // Configurazione per app mobile
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/pagead2\.googlesyndication\.com/,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'ads-cache'
-            }
-          }
-        ]
       }
     })
   ],
@@ -44,7 +31,6 @@ export default defineConfig({
     port: 3000
   },
   build: {
-    // Configurazione per AdSense compatibilità
     target: 'es2015'
   }
 })
