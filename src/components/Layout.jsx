@@ -81,6 +81,8 @@ const Layout = ({ children }) => {
           <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
             <div className="flex items-center flex-shrink-0 px-4">
               <h1 className="text-xl font-bold">CareAutoPro</h1>
+              // Aggiungi questa descrizione nel header:
+              <p className="text-sm text-gray-600 mt-1">Gestione completa flotta veicoli</p>
             </div>
             <nav className="mt-5 flex-1 px-2 bg-white space-y-1">
               {navigation.map((item) => (
