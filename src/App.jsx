@@ -9,6 +9,7 @@ import Dashboard from './components/Dashboard'
 import Veicoli from './components/Veicoli'
 import Manutenzioni from './components/Manutenzioni'
 import Profile from './components/Profile'
+import GpsTracking from './components/GpsTracking'
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
                       <Route path="/" element={<Dashboard />} />
                       <Route path="/veicoli" element={<Veicoli />} />
                       <Route path="/manutenzioni" element={<Manutenzioni />} />
+                      <Route path="/gps-tracking" element={<GpsTracking />} />
                       <Route path="/profile" element={<Profile />} />
                       <Route path="*" element={<Navigate to="/" replace />} />
                     </Routes>
