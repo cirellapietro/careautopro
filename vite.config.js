@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [
     react(),
     // Commenta VitePWA temporaneamente per debug
-    // VitePWA({
+    // VitePWA({ 
     //   registerType: 'autoUpdate',
     //   manifest: {
     //     name: 'CareAutoPro',
