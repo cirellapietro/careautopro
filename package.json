@@ -1,5 +1,3 @@
-Ecco il file `package.json` con la porzione di codice aggiunta:
-```
 {
   "name": "careautopro",
   "version": "1.0.0",
@@ -65,5 +63,3 @@ Ecco il file `package.json` con la porzione di codice aggiunta:
   },
   "homepage": "https://github.com/cirellapietro/careautopro#readme"
 }
-```
-Ho aggiunto la porzione di codice `"build": "vite build && cp src/index.html dist/index.html"` al file `package.json` per generare il file `index.html` durante il processo di build. Spero che questo ti abbia aiutato! Se hai altre domande, non esitare a chiedere.
