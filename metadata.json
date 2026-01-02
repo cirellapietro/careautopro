@@ -1,5 +1,0 @@
-{
-  "name": "Gestione Manutenzione Veicoli",
-  "description": "Un'applicazione PWA per tracciare e gestire la manutenzione dei veicoli degli utenti, con avvisi, tracciamento GPS e monetizzazione tramite AdMob.",
-  "requestFramePermissions": []
-}
