@@ -1,70 +1,21 @@
 {
   "name": "careautopro",
   "version": "1.0.0",
-  "description": "",
   "type": "module",
-  "main": "index.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "preview": "vite preview"
   },
   "dependencies": {
-    "baseline-browser-mapping": "^2.9.11",
-    "browserslist": "^4.28.1",
-    "caniuse-lite": "^1.0.30001762",
-    "convert-source-map": "^2.0.0",
-    "cookie": "^1.1.1",
-    "debug": "^4.4.3",
-    "electron-to-chromium": "^1.5.267",
-    "esbuild": "^0.25.12",
-    "escalade": "^3.2.0",
-    "fdir": "^6.5.0",
-    "gensync": "^1.0.0-beta.2",
-    "iceberg-js": "^0.8.1",
-    "js-tokens": "^4.0.0",
-    "jsesc": "^3.1.0",
-    "json5": "^2.2.3",
-    "lru-cache": "^5.1.1",
-    "ms": "^2.1.3",
-    "nanoid": "^3.3.11",
-    "node-releases": "^2.0.27",
-    "picocolors": "^1.1.1",
-    "picomatch": "^4.0.3",
-    "postcss": "^8.5.6",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
-    "react-refresh": "^0.18.0",
-    "react-router": "^7.11.0",
     "react-router-dom": "^7.11.0",
-    "rollup": "^4.54.0",
-    "scheduler": "^0.27.0",
-    "semver": "^6.3.1",
-    "set-cookie-parser": "^2.7.2",
-    "source-map-js": "^1.2.1",
-    "tinyglobby": "^0.2.15",
-    "tslib": "^2.8.1",
-    "typescript": "^5.8.3",
-    "undici-types": "^6.21.0",
-    "update-browserslist-db": "^1.2.3",
-    "vercel": "^50.1.3",
-    "vite": "^6.4.1",
-    "ws": "^8.18.3",
-    "yallist": "^3.1.1"
+    "postcss": "^8.5.6",
+    "typescript": "^5.8.3"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.4"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/cirellapietro/careautopro.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/cirellapietro/careautopro/issues"
-  },
-  "homepage": "https://github.com/cirellapietro/careautopro#readme"
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^6.4.1"
+  }
 }
