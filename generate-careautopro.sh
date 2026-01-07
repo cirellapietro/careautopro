@@ -1,23 +1,23 @@
 #!/usr/bin/env bash
 set -e
 
-echo "⚠️  Pulizia totale repository..."
-
-# Cancella tutto tranne .git e questo script
+echo "🔥 Pulizia repository..."
 find . -mindepth 1 \
   ! -path "./.git*" \
   ! -name "generate-careautopro.sh" \
   -exec rm -rf {} +
 
-echo "📁 Creazione struttura directory..."
+echo "📁 Creazione struttura..."
 mkdir -p src public
 
-echo "📦 package.json"
+# ---------------------------
+# package.json
+# ---------------------------
 cat > package.json <<'EOF'
 {
   "name": "careautopro-pwa",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -37,20 +37,22 @@ cat > package.json <<'EOF'
 }
 EOF
 
-echo "⚙️ vite.config.ts"
+# ---------------------------
+# vite.config.ts
+# ---------------------------
 cat > vite.config.ts <<'EOF'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  server: {
-    host: true
-  }
+  server: { host: true }
 })
 EOF
 
-echo "📄 index.html"
+# ---------------------------
+# index.html
+# ---------------------------
 cat > index.html <<'EOF'
 <!DOCTYPE html>
 <html lang="it">
@@ -67,7 +69,9 @@ cat > index.html <<'EOF'
 </html>
 EOF
 
-echo "📄 public/manifest.json"
+# ---------------------------
+# manifest.json
+# ---------------------------
 cat > public/manifest.json <<'EOF'
 {
   "name": "CareAutoPro",
@@ -75,123 +79,160 @@ cat > public/manifest.json <<'EOF'
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#1976d2",
-  "icons": []
+  "theme_color": "#1976d2"
 }
 EOF
 
-echo "🔐 src/supabase.ts"
+# ---------------------------
+# supabase.ts
+# ---------------------------
 cat > src/supabase.ts <<'EOF'
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL!
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY!
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL!,
+  import.meta.env.VITE_SUPABASE_ANON_KEY!
+)
 EOF
 
-echo "🛰️ src/gps.ts"
+# ---------------------------
+# gps.ts
+# ---------------------------
 cat > src/gps.ts <<'EOF'
 let watchId: number | null = null
-let lastPosition: GeolocationPosition | null = null
-let totalKm = 0
+let last: GeolocationPosition | null = null
+let km = 0
 
-function distanceKm(a: GeolocationPosition, b: GeolocationPosition) {
+function haversine(a: GeolocationPosition, b: GeolocationPosition) {
   const R = 6371
   const dLat = (b.coords.latitude - a.coords.latitude) * Math.PI / 180
   const dLon = (b.coords.longitude - a.coords.longitude) * Math.PI / 180
   const lat1 = a.coords.latitude * Math.PI / 180
   const lat2 = b.coords.latitude * Math.PI / 180
-
-  const x =
+  const h =
     Math.sin(dLat / 2) ** 2 +
     Math.sin(dLon / 2) ** 2 * Math.cos(lat1) * Math.cos(lat2)
-
-  return 2 * R * Math.asin(Math.sqrt(x))
+  return 2 * R * Math.asin(Math.sqrt(h))
 }
 
-export function startAutoTracking(onUpdate: (km: number) => void) {
-  if (!navigator.geolocation) {
-    alert("GPS non supportato")
-    return
-  }
-
-  watchId = navigator.geolocation.watchPosition(
-    pos => {
-      if (lastPosition) {
-        totalKm += distanceKm(lastPosition, pos)
-        onUpdate(Number(totalKm.toFixed(3)))
-      }
-      lastPosition = pos
-    },
-    err => alert(err.message),
-    { enableHighAccuracy: true }
-  )
+export function startAuto(cb: (k: number) => void) {
+  watchId = navigator.geolocation.watchPosition(pos => {
+    if (last) {
+      km += haversine(last, pos)
+      cb(Number(km.toFixed(3)))
+    }
+    last = pos
+  }, err => alert(err.message), { enableHighAccuracy: true })
 }
 
-export function stopTracking() {
-  if (watchId !== null) {
-    navigator.geolocation.clearWatch(watchId)
-    watchId = null
-    lastPosition = null
-    totalKm = 0
-  }
+export function stopAuto() {
+  if (watchId) navigator.geolocation.clearWatch(watchId)
+  watchId = null
+  last = null
+  km = 0
 }
 EOF
 
-echo "🎨 src/styles.css"
+# ---------------------------
+# styles.css
+# ---------------------------
 cat > src/styles.css <<'EOF'
 body {
-  margin: 0;
+  margin:0;
   font-family: system-ui, sans-serif;
-  background: #f5f5f5;
+  background:#f5f5f5;
 }
-
 header {
-  background: #1976d2;
-  color: white;
-  padding: 1rem;
-  text-align: center;
+  background:#1976d2;
+  color:white;
+  padding:1rem;
+  text-align:center;
 }
-
 main {
-  padding: 1rem;
+  padding:1rem;
 }
-
-button {
-  width: 100%;
-  padding: 1rem;
-  margin: 0.5rem 0;
-  font-size: 1rem;
+select, button {
+  width:100%;
+  padding:1rem;
+  margin:0.5rem 0;
+  font-size:1rem;
+}
+.card {
+  background:white;
+  padding:1rem;
+  margin:0.5rem 0;
+  border-radius:6px;
 }
 EOF
 
-echo "🧠 src/App.tsx"
+# ---------------------------
+# App.tsx
+# ---------------------------
 cat > src/App.tsx <<'EOF'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from './supabase'
-import { startAutoTracking, stopTracking } from './gps'
+import { startAuto, stopAuto } from './gps'
 import './styles.css'
 
 export default function App() {
   const [user, setUser] = useState<any>(null)
+  const [veicoli, setVeicoli] = useState<any[]>([])
+  const [veicolo, setVeicolo] = useState<any>(null)
   const [km, setKm] = useState(0)
   const [tracking, setTracking] = useState(false)
 
-  async function login() {
-    const { data } = await supabase.auth.signInWithOAuth({
-      provider: 'google'
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) setUser(data.session.user)
     })
-    if (data) setUser(data.user)
+  }, [])
+
+  useEffect(() => {
+    if (!user) return
+    supabase
+      .from('veicoli')
+      .select('*')
+      .eq('utente_id', user.id)
+      .then(r => {
+        const list = r.data || []
+        setVeicoli(list)
+        const principale = list.find(v => v.is_principale)
+        if (principale) setVeicolo(principale)
+      })
+  }, [user])
+
+  async function login(provider?: 'google' | 'facebook') {
+    if (provider) {
+      await supabase.auth.signInWithOAuth({ provider })
+    } else {
+      const email = prompt("Email")
+      const password = prompt("Password")
+      if (email && password)
+        await supabase.auth.signInWithPassword({ email, password })
+    }
+  }
+
+  async function setPrincipale(v:any) {
+    await supabase
+      .from('veicoli')
+      .update({ is_principale: false })
+      .eq('utente_id', user.id)
+
+    await supabase
+      .from('veicoli')
+      .update({ is_principale: true })
+      .eq('veicolo_id', v.veicolo_id)
+
+    setVeicolo({ ...v, is_principale: true })
   }
 
   function start() {
-    startAutoTracking(setKm)
+    startAuto(setKm)
     setTracking(true)
   }
 
   function stop() {
-    stopTracking()
+    stopAuto()
     setTracking(false)
     setKm(0)
   }
@@ -200,13 +241,44 @@ export default function App() {
     <>
       <header>CareAutoPro</header>
       <main>
-        {!user && <button onClick={login}>Accedi</button>}
+        {!user && (
+          <>
+            <button onClick={()=>login()}>Login Email</button>
+            <button onClick={()=>login('google')}>Login Google</button>
+            <button onClick={()=>login('facebook')}>Login Facebook</button>
+          </>
+        )}
 
         {user && (
           <>
-            <p>Km percorsi: {km}</p>
-            {!tracking && <button onClick={start}>Avvia Tracking Automatico</button>}
-            {tracking && <button onClick={stop}>Ferma Tracking</button>}
+            <select
+              value={veicolo?.veicolo_id || ''}
+              onChange={e => {
+                const v = veicoli.find(x => x.veicolo_id === e.target.value)
+                setVeicolo(v)
+              }}
+            >
+              <option value="">Seleziona veicolo</option>
+              {veicoli.map(v => (
+                <option key={v.veicolo_id} value={v.veicolo_id}>
+                  {v.nomeveicolo} {v.is_principale ? '⭐' : ''}
+                </option>
+              ))}
+            </select>
+
+            {veicolo && !veicolo.is_principale && (
+              <button onClick={()=>setPrincipale(veicolo)}>
+                Imposta come veicolo principale
+              </button>
+            )}
+
+            {veicolo && (
+              <div className="card">
+                <p>Km da GPS: {km}</p>
+                {!tracking && <button onClick={start}>Tracking Automatico</button>}
+                {tracking && <button onClick={stop}>Ferma Tracking</button>}
+              </div>
+            )}
           </>
         )}
       </main>
@@ -215,7 +287,9 @@ export default function App() {
 }
 EOF
 
-echo "🚀 src/main.tsx"
+# ---------------------------
+# main.tsx
+# ---------------------------
 cat > src/main.tsx <<'EOF'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
@@ -228,14 +302,13 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 )
 EOF
 
-echo "🙈 .gitignore"
+# ---------------------------
+# .gitignore
+# ---------------------------
 cat > .gitignore <<'EOF'
 node_modules
 dist
 .env
 EOF
 
-echo "✅ Generazione completata"
-echo "Ora esegui:"
-echo "  npm install"
-echo "  npm run dev"
+echo "✅ Script CareAutoPro generato correttamente"
