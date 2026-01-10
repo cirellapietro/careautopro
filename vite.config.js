@@ -29,12 +29,16 @@ export default defineConfig({
             type: 'image/png'
           }
         ]
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        globIgnores: ['**/node_modules/**/*', 'sw.js', 'workbox-*.js']
       }
     })
   ],
   build: {
     outDir: 'dist',
-    sourcemap: true
+    sourcemap: false
   },
   server: {
     host: true,
