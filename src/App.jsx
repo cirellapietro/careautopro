@@ -36,7 +36,7 @@ function App() {
           <Route path="/dashboard" element={session ? <Dashboard /> : <Navigate to="/login" />} />
           <Route path="/vehicles" element={session ? <VehicleManager /> : <Navigate to="/login" />} />
           <Route path="/settings" element={session ? <Settings /> : <Navigate to="/login" />} />
-          <Route path="*" element={<Navigate to={session ? "/dashboard" : "/login"} />} />
+          <Route path="/" element={<Navigate to={session ? "/dashboard" : "/login"} />} />
         </Routes>
         {session && <BottomNav />}
       </div>
