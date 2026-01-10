@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Mail, Lock, Google, Facebook, Apple } from 'lucide-react'
+import { Mail, Lock, Chrome, Facebook, Apple } from 'lucide-react'
 import { supabase, signInWithGoogle, signInWithFacebook, signInWithApple } from '../services/supabase.js'
 
 export default function AuthPage() {
