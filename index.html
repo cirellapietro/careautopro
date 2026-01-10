@@ -1,12 +1,224 @@
 <!DOCTYPE html>
 <html lang="it">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CareAutoPro</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+<meta charset="UTF-8">
+<title>CareAutoPro</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="manifest" href="data:application/json,{
+ &quot;name&quot;:&quot;CareAutoPro&quot;,
+ &quot;short_name&quot;:&quot;CareAutoPro&quot;,
+ &quot;start_url&quot;:&quot;.&quot;,
+ &quot;display&quot;:&quot;standalone&quot;,
+ &quot;background_color&quot;:&quot;#0d47a1&quot;,
+ &quot;theme_color&quot;:&quot;#0d47a1&quot;,
+ &quot;icons&quot;:[
+  {&quot;src&quot;:&quot;https://cdn-icons-png.flaticon.com/512/743/743131.png&quot;,
+   &quot;sizes&quot;:&quot;192x192&quot;,&quot;type&quot;:&quot;image/png&quot;}
+ ]}">
+
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+<style>
+body{font-family:Arial;margin:0;background:#f4f4f4}
+header{background:#0d47a1;color:#fff;padding:1rem;text-align:center}
+main{max-width:600px;margin:auto;padding:1rem}
+.card{background:#fff;padding:1rem;margin:1rem 0;border-radius:6px}
+input,button,select{width:100%;padding:.6rem;margin:.3rem 0}
+button{background:#0d47a1;color:#fff;border:none}
+.secondary{background:#555}
+.hidden{display:none}
+.premium{border:2px solid gold}
+.offline{color:red;text-align:center}
+small{color:#777}
+</style>
+</head>
+
+<body>
+
+<header>
+<h2>🚗 CareAutoPro</h2>
+<small id="userStatus"></small>
+</header>
+
+<main>
+
+<div id="offline" class="offline hidden">⚠️ Modalità offline</div>
+
+<div id="auth" class="card">
+<h3>Accesso</h3>
+<input id="email" placeholder="Email">
+<input id="password" type="password">
+<button onclick="login()">Login</button>
+<button class="secondary" onclick="register()">Registrati</button>
+</div>
+
+<div id="app" class="hidden">
+
+<div class="card">
+<h3>Veicoli</h3>
+<select id="vehicle"></select>
+<input id="newVehicle" placeholder="Nuovo veicolo">
+<button onclick="addVehicle()">Aggiungi veicolo</button>
+<small id="vehicleLimit"></small>
+</div>
+
+<div class="card">
+<h3>Manutenzione</h3>
+<input id="title" placeholder="Descrizione">
+<input id="km" type="number" placeholder="KM">
+<button onclick="save()">Salva</button>
+</div>
+
+<div class="card">
+<h3>Storico</h3>
+<ul id="list"></ul>
+</div>
+
+<div class="card premium">
+<h3>⭐ Premium</h3>
+<p>Veicoli multipli, notifiche e funzioni avanzate</p>
+<button onclick="upgradeInfo()">Scopri Premium</button>
+</div>
+
+<div class="card">
+<h3>Notifiche</h3>
+<button onclick="enablePush()">Abilita notifiche</button>
+<small id="pushInfo"></small>
+</div>
+
+<button class="secondary" onclick="logout()">Logout</button>
+
+</div>
+</main>
+
+<script>
+/* CONFIG */
+const SUPABASE_URL="https://TUO-PROGETTO.supabase.co";
+const SUPABASE_KEY="PUBLIC_ANON_KEY";
+const supabase=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+let userProfile=null;
+
+/* SERVICE WORKER INLINE */
+const swCode=`
+const CACHE="cap-v1";
+self.addEventListener("install",e=>e.waitUntil(
+ caches.open(CACHE).then(c=>c.addAll(["./"]))
+));
+self.addEventListener("fetch",e=>{
+ e.respondWith(
+  fetch(e.request).then(r=>{
+   const res=r.clone();
+   caches.open(CACHE).then(c=>c.put(e.request,res));
+   return r;
+  }).catch(()=>caches.match(e.request))
+ )
+});
+self.addEventListener("push",e=>{
+ const d=e.data?.json()||{};
+ self.registration.showNotification(d.title||"CareAutoPro",{
+  body:d.body||"Notifica",
+  icon:"https://cdn-icons-png.flaticon.com/512/743/743131.png"
+ });
+});
+`;
+navigator.serviceWorker.register(URL.createObjectURL(new Blob([swCode])));
+
+/* OFFLINE */
+window.addEventListener("offline",()=>offline.classList.remove("hidden"));
+window.addEventListener("online",()=>offline.classList.add("hidden"));
+
+/* AUTH */
+async function login(){
+ const {error}=await supabase.auth.signInWithPassword({
+  email:email.value,password:password.value
+ });
+ if(error) alert(error.message);
+}
+async function register(){
+ const {error}=await supabase.auth.signUp({
+  email:email.value,password:password.value
+ });
+ if(error) alert(error.message);
+ else alert("Registrazione completata");
+}
+async function logout(){
+ await supabase.auth.signOut();location.reload();
+}
+supabase.auth.onAuthStateChange((_,s)=>s&&load());
+
+/* LOAD */
+async function load(){
+ auth.classList.add("hidden");
+ app.classList.remove("hidden");
+ const u=(await supabase.auth.getUser()).data.user;
+ const {data}=await supabase.from("profiles").select("*").eq("id",u.id).single();
+ userProfile=data||{premium:false};
+ userStatus.textContent=userProfile.premium?"Utente PREMIUM ⭐":"Utente FREE";
+ loadVehicles();
+ loadItems();
+}
+
+/* VEHICLES */
+async function loadVehicles(){
+ const u=(await supabase.auth.getUser()).data.user;
+ const {data}=await supabase.from("veicoli").select("*").eq("user_id",u.id);
+ vehicle.innerHTML="";
+ data.forEach(v=>{
+  const o=document.createElement("option");
+  o.textContent=v.nome;o.value=v.id;vehicle.appendChild(o);
+ });
+ if(!userProfile.premium && data.length>=1)
+  vehicleLimit.textContent="Versione FREE: 1 veicolo massimo";
+}
+async function addVehicle(){
+ if(!userProfile.premium){
+  alert("Funzione Premium");
+  return;
+ }
+ const u=(await supabase.auth.getUser()).data.user;
+ await supabase.from("veicoli").insert({user_id:u.id,nome:newVehicle.value});
+ newVehicle.value="";loadVehicles();
+}
+
+/* DATA */
+async function save(){
+ const u=(await supabase.auth.getUser()).data.user;
+ await supabase.from("manutenzioni").insert({
+  user_id:u.id,title:title.value,km:km.value
+ });
+ title.value="";km.value="";
+ loadItems();
+}
+async function loadItems(){
+ const u=(await supabase.auth.getUser()).data.user;
+ const {data}=await supabase.from("manutenzioni")
+  .select("*").eq("user_id",u.id).order("created_at",{ascending:false});
+ list.innerHTML="";
+ data?.forEach(i=>{
+  const li=document.createElement("li");
+  li.textContent=`${i.title} – ${i.km} km`;
+  list.appendChild(li);
+ });
+}
+
+/* PUSH */
+async function enablePush(){
+ if(!userProfile.premium){
+  pushInfo.textContent="Disponibile solo Premium";
+  return;
+ }
+ const reg=await navigator.serviceWorker.ready;
+ await reg.pushManager.subscribe({userVisibleOnly:true});
+ alert("Notifiche abilitate");
+}
+
+/* PREMIUM INFO */
+function upgradeInfo(){
+ alert("Versione Premium: veicoli multipli, notifiche avanzate. Pagamenti in arrivo.");
+}
+</script>
+
+</body>
 </html>
