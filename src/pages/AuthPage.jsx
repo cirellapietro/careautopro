@@ -91,7 +91,7 @@ export default function AuthPage() {
               onClick={signInWithGoogle}
               className="flex items-center justify-center p-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
             >
-              <Google className="h-5 w-5 text-red-500" />
+              <Chrome className="h-5 w-5 text-red-500" />
             </button>
             <button
               onClick={signInWithFacebook}
