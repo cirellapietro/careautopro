@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
-import { Mail, Lock, Chrome, Facebook, Apple } from 'lucide-react'
-import { supabase, signInWithGoogle, signInWithFacebook, signInWithApple } from '../services/supabase.js'
+import { Mail, Lock, Chrome, Facebook } from 'lucide-react'
+import { supabase, signInWithGoogle, signInWithFacebook } from '../services/supabase.js'
 
 export default function AuthPage() {
   const [email, setEmail] = useState('')
@@ -86,24 +86,20 @@ export default function AuthPage() {
             </div>
           </div>
 
-          <div className="mt-6 grid grid-cols-3 gap-3">
+          <div className="mt-6 flex justify-center space-x-4">
             <button
               onClick={signInWithGoogle}
-              className="flex items-center justify-center p-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+              className="flex items-center justify-center p-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition w-20"
+              title="Google"
             >
-              <Chrome className="h-5 w-5 text-red-500" />
+              <Chrome className="h-6 w-6 text-red-500" />
             </button>
             <button
               onClick={signInWithFacebook}
-              className="flex items-center justify-center p-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+              className="flex items-center justify-center p-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition w-20"
+              title="Facebook"
             >
-              <Facebook className="h-5 w-5 text-blue-600" />
-            </button>
-            <button
-              onClick={signInWithApple}
-              className="flex items-center justify-center p-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-            >
-              <Apple className="h-5 w-5 text-gray-800" />
+              <Facebook className="h-6 w-6 text-blue-600" />
             </button>
           </div>
         </div>
@@ -119,4 +115,4 @@ export default function AuthPage() {
       </div>
     </div>
   )
-              }
+}
