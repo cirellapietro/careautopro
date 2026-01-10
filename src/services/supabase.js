@@ -11,7 +11,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 })
 
-// Helper per login social
 export const signInWithGoogle = async () => {
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
@@ -32,15 +31,16 @@ export const signInWithFacebook = async () => {
   if (error) throw error
 }
 
-export const signInWithApple = async () => {
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider: 'apple',
-    options: {
-      redirectTo: `${window.location.origin}/dashboard`
-    }
-  })
-  if (error) throw error
-}
+// Apple login rimosso per ora (richiede account developer a pagamento)
+// export const signInWithApple = async () => {
+//   const { error } = await supabase.auth.signInWithOAuth({
+//     provider: 'apple',
+//     options: {
+//       redirectTo: `${window.location.origin}/dashboard`
+//     }
+//   })
+//   if (error) throw error
+// }
 
 export const signOut = async () => {
   const { error } = await supabase.auth.signOut()
