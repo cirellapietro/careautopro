@@ -1,8 +1,8 @@
 export default function App() {
   return (
-    <div style={{ padding: 20 }}>
+    <div style={{ padding: "20px", fontFamily: "Arial" }}>
       <h1>CareAutoPro</h1>
-      <p>App caricata correttamente ✅</p>
+      <p>Applicazione avviata correttamente ✅</p>
     </div>
   );
 }
