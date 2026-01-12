@@ -2,135 +2,119 @@ import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { createClient, Session } from "@supabase/supabase-js";
 
-/* =========================
-   SUPABASE
-========================= */
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL!,
   import.meta.env.VITE_SUPABASE_ANON_KEY!
 );
 
-/* =========================
-   TYPES
-========================= */
 type Veicolo = {
   veicolo_id: string;
   nomeveicolo: string;
 };
 
-type Posizione = {
-  lat: number;
-  lng: number;
-  time: string;
-};
-
-/* =========================
-   APP
-========================= */
 function App() {
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [veicoli, setVeicoli] = useState<Veicolo[]>([]);
   const [pagina, setPagina] = useState<"veicoli" | "gps">("veicoli");
 
-  const [veicoli, setVeicoli] = useState<Veicolo[]>([]);
-  const [veicoloAttivo, setVeicoloAttivo] = useState<string | null>(
-    localStorage.getItem("veicolo_attivo")
-  );
-
-  const [veicoloTracking, setVeicoloTracking] = useState<string | null>(null);
-  const [tracking, setTracking] = useState(false);
-  const [posizioni, setPosizioni] = useState<Posizione[]>([]);
-  const [errore, setErrore] = useState<string | null>(null);
-
-  /* =========================
-     SESSIONE
-  ========================= */
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
-      setLoading(false);
     });
 
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      (_event, session) => setSession(session)
-    );
+    const { data } = supabase.auth.onAuthStateChange((_e, s) => {
+      setSession(s);
+    });
 
     return () => {
-      listener.subscription.unsubscribe();
+      data.subscription.unsubscribe();
     };
   }, []);
 
-  /* =========================
-     VEICOLI
-  ========================= */
   useEffect(() => {
-    if (session) caricaVeicoli();
-  }, [session]);
+    if (!session) return;
 
-  async function caricaVeicoli() {
-    const { data, error } = await supabase
+    supabase
       .from("veicoli")
       .select("veicolo_id, nomeveicolo")
-      .eq("utente_id", session!.user.id)
-      .order("nomeveicolo");
+      .eq("utente_id", session.user.id)
+      .then(({ data }) => {
+        setVeicoli(data || []);
+      });
+  }, [session]);
 
-    if (error) setErrore(error.message);
-    else setVeicoli(data || []);
+  if (!session) {
+    return <Login />;
   }
-
-  function selezionaVeicoloAttivo(id: string) {
-    setVeicoloAttivo(id);
-    localStorage.setItem("veicolo_attivo", id);
-  }
-
-  /* =========================
-     GPS
-  ========================= */
-  function avviaTracking() {
-    if (!veicoloTracking) {
-      alert("Seleziona un veicolo per il tracciamento");
-      return;
-    }
-
-    if (!navigator.geolocation) {
-      alert("GPS non supportato");
-      return;
-    }
-
-    setTracking(true);
-
-    navigator.geolocation.watchPosition(
-      (pos) => {
-        setPosizioni((p) => [
-          ...p,
-          {
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-            time: new Date().toISOString(),
-          },
-        ]);
-      },
-      (err) => {
-        alert("Errore GPS: " + err.message);
-        setTracking(false);
-      },
-      { enableHighAccuracy: true }
-    );
-  }
-
-  function stopTracking() {
-    setTracking(false);
-  }
-
-  /* =========================
-     LOGOUT
-  ========================= */
-  async function logout() {
-    await supabase.auth.signOut();
-    localStorage.clear();
-  }
-
-  if (loading) return <p>Caricamento...</p>;
-  if (!session) return <Login />;
 
   return (
+    <div style={{ paddingBottom: 70 }}>
+      {pagina === "veicoli" && (
+        <div style={{ padding: 24 }}>
+          <h2>Veicoli</h2>
+          <ul>
+            {veicoli.map((v) => (
+              <li key={v.veicolo_id}>{v.nomeveicolo}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {pagina === "gps" && (
+        <div style={{ padding: 24 }}>
+          <h2>GPS</h2>
+          <p>Schermata GPS (step successivo)</p>
+        </div>
+      )}
+
+      <div
+        style={{
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: 60,
+          background: "#0f172a",
+          display: "flex",
+          justifyContent: "space-around",
+          alignItems: "center",
+          color: "white",
+        }}
+      >
+        <button onClick={() => setPagina("veicoli")}>Veicoli</button>
+        <button onClick={() => setPagina("gps")}>GPS</button>
+        <button onClick={() => supabase.auth.signOut()}>Logout</button>
+      </div>
+    </div>
+  );
+}
+
+function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  async function login() {
+    await supabase.auth.signInWithPassword({ email, password });
+  }
+
+  return (
+    <div style={{ padding: 24 }}>
+      <h2>Login</h2>
+      <input value={email} onChange={(e) => setEmail(e.target.value)} />
+      <br /><br />
+      <input
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+      />
+      <br /><br />
+      <button onClick={login}>Accedi</button>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
