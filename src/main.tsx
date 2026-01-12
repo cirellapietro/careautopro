@@ -52,15 +52,13 @@ function App() {
      CARICA VEICOLI
   ========================= */
   useEffect(() => {
-    if (!session) return;
-
-    caricaVeicoli();
+    if (session) caricaVeicoli();
   }, [session]);
 
   async function caricaVeicoli() {
     setErrore(null);
 
-    const utente_id = session!.user.id; // collegato a utenti.utente_id
+    const utente_id = session!.user.id;
 
     const { data, error } = await supabase
       .from("veicoli")
@@ -68,11 +66,29 @@ function App() {
       .eq("utente_id", utente_id)
       .order("nomeveicolo");
 
-    if (error) {
-      setErrore(error.message);
-    } else {
-      setVeicoli(data || []);
-    }
+    if (error) setErrore(error.message);
+    else setVeicoli(data || []);
+  }
+
+  /* =========================
+     CREA VEICOLO
+  ========================= */
+  async function creaVeicolo(nomeveicolo: string) {
+    if (!session) return;
+
+    setErrore(null);
+
+    const utente_id = session.user.id;
+    const isPrimo = veicoli.length === 0;
+
+    const { error } = await supabase.from("veicoli").insert({
+      utente_id,
+      nomeveicolo,
+      principale: isPrimo,
+    });
+
+    if (error) setErrore(error.message);
+    else caricaVeicoli();
   }
 
   /* =========================
@@ -83,23 +99,18 @@ function App() {
 
     const utente_id = session.user.id;
 
-    // reset
     await supabase
       .from("veicoli")
       .update({ principale: false })
       .eq("utente_id", utente_id);
 
-    // set principale
     const { error } = await supabase
       .from("veicoli")
       .update({ principale: true })
       .eq("veicolo_id", veicolo_id);
 
-    if (error) {
-      setErrore(error.message);
-    } else {
-      caricaVeicoli();
-    }
+    if (error) setErrore(error.message);
+    else caricaVeicoli();
   }
 
   /* =========================
@@ -110,23 +121,22 @@ function App() {
     setVeicoli([]);
   }
 
-  /* =========================
-     RENDER
-  ========================= */
   if (loading) return <p>Caricamento...</p>;
-
-  if (!session) {
-    return <Login />;
-  }
+  if (!session) return <Login />;
 
   return (
-    <div style={{ padding: 24 }}>
+    <div style={{ padding: 24, maxWidth: 480, margin: "0 auto" }}>
       <h1>CareAutoPro</h1>
-      <p>Veicoli associati</p>
 
       {errore && <p style={{ color: "red" }}>{errore}</p>}
 
-      {veicoli.length === 0 && <p>Nessun veicolo registrato</p>}
+      <NuovoVeicolo onCreate={creaVeicolo} />
+
+      <hr />
+
+      <h3>I tuoi veicoli</h3>
+
+      {veicoli.length === 0 && <p>Nessun veicolo inserito</p>}
 
       <ul>
         {veicoli.map((v) => (
@@ -152,7 +162,35 @@ function App() {
 }
 
 /* =========================
-   LOGIN COMPONENT
+   NUOVO VEICOLO
+========================= */
+function NuovoVeicolo({ onCreate }: { onCreate: (n: string) => void }) {
+  const [nome, setNome] = useState("");
+
+  function submit() {
+    if (!nome.trim()) return;
+    onCreate(nome.trim());
+    setNome("");
+  }
+
+  return (
+    <div>
+      <h3>Aggiungi veicolo</h3>
+
+      <input
+        placeholder="Nome veicolo"
+        value={nome}
+        onChange={(e) => setNome(e.target.value)}
+      />
+      <br /><br />
+
+      <button onClick={submit}>Salva veicolo</button>
+    </div>
+  );
+}
+
+/* =========================
+   LOGIN
 ========================= */
 function Login() {
   const [email, setEmail] = useState("");
@@ -198,7 +236,7 @@ function Login() {
 }
 
 /* =========================
-   RENDER ROOT
+   ROOT
 ========================= */
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
