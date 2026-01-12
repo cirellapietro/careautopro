@@ -1,14 +1,22 @@
 import React, { useState } from "react";
 import ReactDOM from "react-dom/client";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 /* =========================
-   SUPABASE
+   SUPABASE SAFE INIT
 ========================= */
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL!,
-  import.meta.env.VITE_SUPABASE_ANON_KEY!
-);
+let supabase: SupabaseClient | null = null;
+let supabaseError: string | null = null;
+
+const url = import.meta.env.VITE_SUPABASE_URL;
+const anon = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+if (!url || !anon) {
+  supabaseError =
+    "Supabase non configurato. Verifica VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY su Vercel.";
+} else {
+  supabase = createClient(url, anon);
+}
 
 /* =========================
    APP
@@ -16,11 +24,12 @@ const supabase = createClient(
 function App() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(supabaseError);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  /* LOGIN EMAIL */
   async function loginEmail() {
+    if (!supabase) return;
+
     setLoading(true);
     setError(null);
 
@@ -33,8 +42,9 @@ function App() {
     setLoading(false);
   }
 
-  /* LOGIN SOCIAL */
   async function loginSocial(provider: "google" | "facebook") {
+    if (!supabase) return;
+
     setLoading(true);
     setError(null);
 
@@ -58,6 +68,12 @@ function App() {
 
       <hr />
 
+      {error && (
+        <p style={{ color: "red", fontSize: 14 }}>
+          {error}
+        </p>
+      )}
+
       <h3>Accedi</h3>
 
       <input
@@ -65,6 +81,7 @@ function App() {
         placeholder="Email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
+        disabled={!supabase}
       />
       <br /><br />
 
@@ -73,10 +90,11 @@ function App() {
         placeholder="Password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
+        disabled={!supabase}
       />
       <br /><br />
 
-      <button onClick={loginEmail} disabled={loading}>
+      <button onClick={loginEmail} disabled={!supabase || loading}>
         Accedi
       </button>
 
@@ -85,7 +103,7 @@ function App() {
       <button
         style={{ width: "100%", background: "#db4437" }}
         onClick={() => loginSocial("google")}
-        disabled={loading}
+        disabled={!supabase || loading}
       >
         Accedi con Google
       </button>
@@ -95,14 +113,10 @@ function App() {
       <button
         style={{ width: "100%", background: "#1877f2" }}
         onClick={() => loginSocial("facebook")}
-        disabled={loading}
+        disabled={!supabase || loading}
       >
         Accedi con Facebook
       </button>
-
-      {error && (
-        <p style={{ color: "red", marginTop: 16 }}>{error}</p>
-      )}
     </div>
   );
 }
