@@ -1,52 +1,43 @@
 import React, { useState } from "react";
 import ReactDOM from "react-dom/client";
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 
-/* =========================
-   SUPABASE SAFE INIT
-========================= */
-let supabase: SupabaseClient | null = null;
-let supabaseError: string | null = null;
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL!,
+  import.meta.env.VITE_SUPABASE_ANON_KEY!
+);
 
-const url = import.meta.env.VITE_SUPABASE_URL;
-const anon = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-if (!url || !anon) {
-  supabaseError =
-    "Supabase non configurato. Verifica VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY su Vercel.";
-} else {
-  supabase = createClient(url, anon);
-}
-
-/* =========================
-   APP
-========================= */
 function App() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(supabaseError);
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
 
   async function loginEmail() {
-    if (!supabase) return;
-
     setLoading(true);
-    setError(null);
+    setMessage(null);
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (error) setError(error.message);
+    console.log("LOGIN EMAIL:", data, error);
+
+    if (error) {
+      setMessage("Errore login: " + error.message);
+    } else {
+      setMessage("Login effettuato con successo");
+    }
+
     setLoading(false);
   }
 
   async function loginSocial(provider: "google" | "facebook") {
-    if (!supabase) return;
-
     setLoading(true);
-    setError(null);
+    setMessage(null);
+
+    console.log("LOGIN SOCIAL:", provider);
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
@@ -56,7 +47,8 @@ function App() {
     });
 
     if (error) {
-      setError(error.message);
+      console.error(error);
+      setMessage("Errore " + provider + ": " + error.message);
       setLoading(false);
     }
   }
@@ -64,24 +56,12 @@ function App() {
   return (
     <div style={{ padding: 24, maxWidth: 360, margin: "0 auto" }}>
       <h1>CareAutoPro</h1>
-      <p>Gestione manutenzione veicoli</p>
-
-      <hr />
-
-      {error && (
-        <p style={{ color: "red", fontSize: 14 }}>
-          {error}
-        </p>
-      )}
-
-      <h3>Accedi</h3>
 
       <input
         type="email"
         placeholder="Email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        disabled={!supabase}
       />
       <br /><br />
 
@@ -90,11 +70,10 @@ function App() {
         placeholder="Password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        disabled={!supabase}
       />
       <br /><br />
 
-      <button onClick={loginEmail} disabled={!supabase || loading}>
+      <button onClick={loginEmail} disabled={loading}>
         Accedi
       </button>
 
@@ -103,7 +82,7 @@ function App() {
       <button
         style={{ width: "100%", background: "#db4437" }}
         onClick={() => loginSocial("google")}
-        disabled={!supabase || loading}
+        disabled={loading}
       >
         Accedi con Google
       </button>
@@ -113,17 +92,20 @@ function App() {
       <button
         style={{ width: "100%", background: "#1877f2" }}
         onClick={() => loginSocial("facebook")}
-        disabled={!supabase || loading}
+        disabled={loading}
       >
         Accedi con Facebook
       </button>
+
+      {message && (
+        <p style={{ marginTop: 16, color: message.startsWith("Errore") ? "red" : "green" }}>
+          {message}
+        </p>
+      )}
     </div>
   );
 }
 
-/* =========================
-   RENDER
-========================= */
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <App />
