@@ -1,40 +1,18 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import ReactDOM from "react-dom/client";
-import { createClient } from "@supabase/supabase-js";
+import App from "./App";
 
-/* =======================
-   SUPABASE
-======================= */
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL!,
-  import.meta.env.VITE_SUPABASE_ANON_KEY!
+const root = document.getElementById("root");
+
+if (!root) {
+  throw new Error("Root element non trovato");
+}
+
+ReactDOM.createRoot(root).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
 );
-
-/* =======================
-   TYPES
-======================= */
-type Veicolo = {
-  id: number;
-  nomeveicolo: string;
-  principale: boolean;
-};
-
-/* =======================
-   APP
-======================= */
-function App() {
-  const [user, setUser] = useState<any>(null);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [erroreLogin, setErroreLogin] = useState<string | null>(null);
-
-  const [pagina, setPagina] = useState<"dashboard" | "veicoli" | "tracking" | "impostazioni">("dashboard");
-  const [veicoli, setVeicoli] = useState<Veicolo[]>([]);
-  const [veicoloAttivo, setVeicoloAttivo] = useState<number | null>(null);
-  const [modalita, setModalita] = useState<"manuale" | "automatico">("manuale");
-  const [posizione, setPosizione] = useState<GeolocationPosition | null>(null);
-  const [erroreGPS, setErroreGPS] = useState<string | null>(null);
-
   /* =======================
      AUTH
   ======================= */
