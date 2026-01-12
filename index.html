@@ -2,21 +2,64 @@
 <html lang="it">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+
+    <title>CareAutoPro</title>
+
+    <!-- Responsive -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CareAutoPro - PWA</title>
-    <meta name="theme-color" content="#0d47a1">
-    <link rel="manifest" href="/manifest.json">
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js');
-        });
+
+    <!-- PWA base -->
+    <meta name="theme-color" content="#1e293b" />
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+
+    <!-- Font semplice stile PDF -->
+    <style>
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, Helvetica, Arial, sans-serif;
+        background-color: #f8fafc;
       }
-    </script>
+
+      button {
+        padding: 10px;
+        border: none;
+        border-radius: 6px;
+        background: #2563eb;
+        color: white;
+        font-size: 16px;
+      }
+
+      input {
+        padding: 10px;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        width: 100%;
+        max-width: 300px;
+      }
+
+      select {
+        padding: 10px;
+        border-radius: 6px;
+      }
+
+      hr {
+        border: none;
+        border-top: 1px solid #e5e7eb;
+        width: 100%;
+      }
+    </style>
   </head>
+
   <body>
+    <!-- ROOT REACT -->
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+
+    <!-- ENTRY VITE -->
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
