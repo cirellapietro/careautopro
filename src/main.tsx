@@ -2,39 +2,11 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 
-const root = document.getElementById("root");
-
-if (!root) {
-  throw new Error("Root element non trovato");
-}
-
-ReactDOM.createRoot(root).render(
+ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <App />
   </React.StrictMode>
 );
-  /* =======================
-     AUTH
-  ======================= */
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setUser(data.session?.user ?? null);
-    });
-
-    supabase.auth.onAuthStateChange((_e, session) => {
-      setUser(session?.user ?? null);
-    });
-  }, []);
-
-  const loginEmailPassword = async () => {
-    setErroreLogin(null);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) setErroreLogin(error.message);
-  };
-
-  const loginGoogle = () =>
-    supabase.auth.signInWithOAuth({ provider: "google" });
-
   const loginFacebook = () =>
     supabase.auth.signInWithOAuth({ provider: "facebook" });
 
