@@ -16,7 +16,6 @@ const supabase = createClient(
 type Veicolo = {
   veicolo_id: string;
   nomeveicolo: string;
-  principale: boolean;
 };
 
 /* =========================
@@ -26,6 +25,9 @@ function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [veicoli, setVeicoli] = useState<Veicolo[]>([]);
+  const [veicoloAttivo, setVeicoloAttivo] = useState<string | null>(
+    localStorage.getItem("veicolo_attivo")
+  );
   const [errore, setErrore] = useState<string | null>(null);
 
   /* =========================
@@ -62,7 +64,7 @@ function App() {
 
     const { data, error } = await supabase
       .from("veicoli")
-      .select("veicolo_id, nomeveicolo, principale")
+      .select("veicolo_id, nomeveicolo")
       .eq("utente_id", utente_id)
       .order("nomeveicolo");
 
@@ -76,15 +78,9 @@ function App() {
   async function creaVeicolo(nomeveicolo: string) {
     if (!session) return;
 
-    setErrore(null);
-
-    const utente_id = session.user.id;
-    const isPrimo = veicoli.length === 0;
-
     const { error } = await supabase.from("veicoli").insert({
-      utente_id,
+      utente_id: session.user.id,
       nomeveicolo,
-      principale: isPrimo,
     });
 
     if (error) setErrore(error.message);
@@ -92,25 +88,11 @@ function App() {
   }
 
   /* =========================
-     SET VEICOLO PRINCIPALE
+     SELEZIONE VEICOLO ATTIVO
   ========================= */
-  async function impostaPrincipale(veicolo_id: string) {
-    if (!session) return;
-
-    const utente_id = session.user.id;
-
-    await supabase
-      .from("veicoli")
-      .update({ principale: false })
-      .eq("utente_id", utente_id);
-
-    const { error } = await supabase
-      .from("veicoli")
-      .update({ principale: true })
-      .eq("veicolo_id", veicolo_id);
-
-    if (error) setErrore(error.message);
-    else caricaVeicoli();
+  function selezionaVeicolo(id: string) {
+    setVeicoloAttivo(id);
+    localStorage.setItem("veicolo_attivo", id);
   }
 
   /* =========================
@@ -118,6 +100,7 @@ function App() {
   ========================= */
   async function logout() {
     await supabase.auth.signOut();
+    localStorage.removeItem("veicolo_attivo");
     setVeicoli([]);
   }
 
@@ -141,16 +124,14 @@ function App() {
       <ul>
         {veicoli.map((v) => (
           <li key={v.veicolo_id} style={{ marginBottom: 8 }}>
-            <strong>{v.nomeveicolo}</strong>{" "}
-            {v.principale && "⭐"}
-            {!v.principale && (
-              <button
-                style={{ marginLeft: 8 }}
-                onClick={() => impostaPrincipale(v.veicolo_id)}
-              >
-                Imposta principale
-              </button>
-            )}
+            <strong>{v.nomeveicolo}</strong>
+            {veicoloAttivo === v.veicolo_id && " 🚗"}
+            <button
+              style={{ marginLeft: 8 }}
+              onClick={() => selezionaVeicolo(v.veicolo_id)}
+            >
+              Usa
+            </button>
           </li>
         ))}
       </ul>
