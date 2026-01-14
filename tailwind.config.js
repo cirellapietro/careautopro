@@ -1,15 +1,11 @@
-/** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'media',
   content: [
     "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
+    "./src/**/*.{js,jsx}"
   ],
   theme: {
-    extend: {
-      colors: {
-        primary: '#0d47a1',
-      },
-    },
+    extend: {}
   },
-  plugins: [],
+  plugins: []
 }
