@@ -1,7 +1,7 @@
 import { Outlet, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "../services/supabase";
-import BottomNav from "../components/BottomNav";
+import BottomNav from "../components/layout/BottomNav";
 
 export default function AppLayout() {
   const [loading, setLoading] = useState(true);
