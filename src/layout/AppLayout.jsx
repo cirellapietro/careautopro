@@ -9,10 +9,12 @@ export default function AppLayout() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (!data.session) navigate("/login");
+      if (!data.session) {
+        navigate("/login");
+      }
       setLoading(false);
     });
-  }, []);
+  }, [navigate]);
 
   if (loading) return null;
 
