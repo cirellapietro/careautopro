@@ -1,10 +1,10 @@
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../services/supabase";
+import { supabase } from "../../services/supabase";
 
 export default function BottomNav() {
   const navigate = useNavigate();
 
-  const logout = async () => {
+  const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/login");
   };
@@ -15,7 +15,7 @@ export default function BottomNav() {
       <button onClick={() => navigate("/veicoli")}>🚗</button>
       <button onClick={() => navigate("/tracking")}>▶️</button>
       <button onClick={() => navigate("/impostazioni")}>⚙️</button>
-      <button onClick={logout}>🚪</button>
+      <button onClick={handleLogout}>🚪</button>
     </nav>
   );
 }
