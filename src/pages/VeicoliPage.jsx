@@ -1,82 +1,56 @@
-import { useEffect, useState } from "react";
-import { supabase } from "../services/supabase";
+import { supabase } from "./supabase";
+import { useTracking } from "./TrackingContext";
 
-export default function VehiclesPage() {
-  const [vehicles, setVehicles] = useState([]);
-  const [activeVehicleId, setActiveVehicleId] = useState(null);
+export default function VehiclesPage({ profiloutente_id }) {
+  const { setVeicoloAttivo } = useTracking();
+  const [veicoli, setVeicoli] = useState([]);
 
   useEffect(() => {
-    loadData();
-  }, []);
-
-  async function loadData() {
-    const {
-      data: { user }
-    } = await supabase.auth.getUser();
-
-    const { data: vehiclesData } = await supabase
+    supabase
       .from("veicoli")
       .select("*")
-      .eq("utente_id", user.id);
+      .eq("profiloutente_id", profiloutente_id)
+      .then(({ data }) => setVeicoli(data));
+  }, []);
 
-    const { data: profilo } = await supabase
-      .from("utentiprofilo")
-      .select("active_vehicle_id")
-      .eq("profiloutente_id", user.id)
+  async function toggleTracking(id) {
+    await supabase
+      .from("veicoli")
+      .update({ tracking_attivo: false })
+      .eq("profiloutente_id", profiloutente_id);
+
+    const { data } = await supabase
+      .from("veicoli")
+      .update({ tracking_attivo: true })
+      .eq("veicolo_id", id)
+      .select()
       .single();
 
-    setVehicles(vehiclesData || []);
-    setActiveVehicleId(profilo?.active_vehicle_id ?? null);
-  }
-
-  async function toggleTracking(veicoloId) {
-    const {
-      data: { user }
-    } = await supabase.auth.getUser();
-
-    const nuovoValore =
-      activeVehicleId === veicoloId ? null : veicoloId;
-
-    await supabase
-      .from("utentiprofilo")
-      .update({ active_vehicle_id: nuovoValore })
-      .eq("profiloutente_id", user.id);
-
-    setActiveVehicleId(nuovoValore);
+    setVeicoloAttivo(data);
   }
 
   return (
-    <div className="p-4">
-      <h1 className="text-xl font-semibold mb-4">Veicoli</h1>
-
-      <table className="w-full border">
-        <thead>
-          <tr>
-            <th>Marca</th>
-            <th>Modello</th>
-            <th>Targa</th>
-            <th>Anno</th>
-            <th>Tracciamento</th>
+    <table>
+      <thead>
+        <tr>
+          <th>Veicolo</th>
+          <th>Targa</th>
+          <th>Tracking</th>
+        </tr>
+      </thead>
+      <tbody>
+        {veicoli.map(v => (
+          <tr key={v.veicolo_id}>
+            <td>{v.nomeveicolo}</td>
+            <td>{v.targa}</td>
+            <td>
+              <button onClick={() => toggleTracking(v.veicolo_id)}>
+                {v.tracking_attivo ? "ON" : "OFF"}
+              </button>
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          {vehicles.map(v => (
-            <tr key={v.veicolo_id}>
-              <td>{v.marca ?? "-"}</td>
-              <td>{v.modello ?? "-"}</td>
-              <td>{v.targa ?? "-"}</td>
-              <td>{v.anno ?? "-"}</td>
-              <td className="text-center">
-                <input
-                  type="checkbox"
-                  checked={activeVehicleId === v.veicolo_id}
-                  onChange={() => toggleTracking(v.veicolo_id)}
-                />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+        ))}
+      </tbody>
+    </table>
   );
-}
+            }
