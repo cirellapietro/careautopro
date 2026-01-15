@@ -1,72 +1,50 @@
-// src/pages/Dashboard.jsx
+import { MapContainer, TileLayer, Polyline } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
 import { useEffect, useState } from "react";
 import { supabase } from "../services/supabase";
 import { useTracking } from "../context/TrackingContext";
-import { useNavigate } from "react-router-dom";
 
-export default function Dashboard({ profiloutente_id }) {
-  const [stats, setStats] = useState(null);
-  const navigate = useNavigate();
-  const { veicoloAttivo, km, isTracking } = useTracking();
+export default function Dashboard({ activeVehicleId }) {
+  const { km, isTracking } = useTracking();
+  const [points, setPoints] = useState([]);
+  const [stats, setStats] = useState({ km: 0, min: 0 });
 
   useEffect(() => {
-    const check = async () => {
-      const { data: veicoli } = await supabase
-        .from("veicoli")
-        .select("veicolo_id")
-        .eq("profiloutente_id", profiloutente_id);
+    if (!activeVehicleId) return;
 
-      if (!veicoli || veicoli.length === 0) {
-        navigate("/veicoli");
-        return;
-      }
+    supabase.from("trackinggps")
+      .select("latitude,longitude")
+      .eq("veicolo_id", activeVehicleId)
+      .eq("is_sessione", false)
+      .then(({ data }) =>
+        setPoints(data.map(p => [p.latitude, p.longitude]))
+      );
 
-      const { data: profilo } = await supabase
-        .from("utentiprofilo")
-        .select("active_vehicle_id")
-        .eq("profiloutente_id", profiloutente_id)
-        .single();
-
-      if (!profilo?.active_vehicle_id) {
-        navigate("/veicoli");
-        return;
-      }
-
-      const oggi = new Date().toISOString().slice(0, 10);
-      const { data } = await supabase
-        .from("trackinggps")
-        .select("km_sessione,durata_minuti")
-        .eq("veicolo_id", profilo.active_vehicle_id)
-        .eq("is_sessione", true)
-        .gte("sessione_inizio", oggi);
-
-      const kmTot = data.reduce((s, r) => s + (r.km_sessione || 0), 0);
-      const minTot = data.reduce((s, r) => s + (r.durata_minuti || 0), 0);
-
-      setStats({ kmTot, minTot });
-    };
-
-    check();
-  }, []);
+    supabase.from("trackinggps")
+      .select("km_sessione,durata_minuti")
+      .eq("veicolo_id", activeVehicleId)
+      .eq("is_sessione", true)
+      .then(({ data }) => {
+        setStats({
+          km: data.reduce((s, r) => s + r.km_sessione, 0),
+          min: data.reduce((s, r) => s + r.durata_minuti, 0)
+        });
+      });
+  }, [activeVehicleId]);
 
   return (
-    <div>
-      <h1>Dashboard</h1>
+    <>
+      <h2>Statistiche oggi</h2>
+      <p>Km totali: {stats.km.toFixed(2)}</p>
+      <p>Minuti: {stats.min}</p>
+      {isTracking && <p>Tracking attivo – sessione km: {km.toFixed(2)}</p>}
 
-      {stats && (
-        <div>
-          <p>Km oggi: {stats.kmTot.toFixed(2)}</p>
-          <p>Minuti oggi: {stats.minTot}</p>
-        </div>
+      {points.length > 1 && (
+        <MapContainer center={points.at(-1)} zoom={14} style={{ height: 300 }}>
+          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <Polyline positions={points} />
+        </MapContainer>
       )}
-
-      {isTracking && (
-        <p>Tracking attivo – km sessione: {km.toFixed(2)}</p>
-      )}
-
-      <button onClick={() => navigate("/veicoli")}>
-        Gestione veicoli
-      </button>
-    </div>
+    </>
   );
 }
