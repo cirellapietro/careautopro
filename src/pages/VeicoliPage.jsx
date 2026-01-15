@@ -1,115 +1,82 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../services/supabase";
 
-const Field = ({ label, value }) => (
-  <div className="field">
-    <label>{label}</label>
-    <div>{value ?? "—"}</div>
-  </div>
-);
-
-export default function VeicoliPage() {
-  const [veicoli, setVeicoli] = useState([]);
-  const [selected, setSelected] = useState(null);
-  const [form, setForm] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
+export default function VehiclesPage() {
+  const [vehicles, setVehicles] = useState([]);
+  const [activeVehicleId, setActiveVehicleId] = useState(null);
 
   useEffect(() => {
-    loadVeicoli();
+    loadData();
   }, []);
 
-  const loadVeicoli = async () => {
-    const { data, error } = await supabase
+  async function loadData() {
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
+
+    const { data: vehiclesData } = await supabase
       .from("veicoli")
       .select("*")
-      .order("nomeveicolo");
+      .eq("utente_id", user.id);
 
-    if (!error) setVeicoli(data || []);
-  };
+    const { data: profilo } = await supabase
+      .from("utentiprofilo")
+      .select("active_vehicle_id")
+      .eq("profiloutente_id", user.id)
+      .single();
 
-  const selectVeicolo = (v) => {
-    setSelected(v);
-    setForm({ ...v });
-    setIsEditing(false);
-  };
+    setVehicles(vehiclesData || []);
+    setActiveVehicleId(profilo?.active_vehicle_id ?? null);
+  }
 
-  const saveVeicolo = async () => {
+  async function toggleTracking(veicoloId) {
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
+
+    const nuovoValore =
+      activeVehicleId === veicoloId ? null : veicoloId;
+
     await supabase
-      .from("veicoli")
-      .update(form)
-      .eq("veicolo_id", form.veicolo_id);
+      .from("utentiprofilo")
+      .update({ active_vehicle_id: nuovoValore })
+      .eq("profiloutente_id", user.id);
 
-    await loadVeicoli();
-    setSelected(form);
-    setIsEditing(false);
-  };
-
-  if (!selected) {
-    return (
-      <div>
-        <h2>Veicoli</h2>
-        {veicoli.map((v) => (
-          <div key={v.veicolo_id} onClick={() => selectVeicolo(v)}>
-            {v.nomeveicolo} ({v.targa ?? "—"})
-          </div>
-        ))}
-      </div>
-    );
+    setActiveVehicleId(nuovoValore);
   }
 
   return (
-    <div>
-      <h2>Dettaglio veicolo</h2>
+    <div className="p-4">
+      <h1 className="text-xl font-semibold mb-4">Veicoli</h1>
 
-      {/* ANAGRAFICA */}
-      <Field label="Nome veicolo" value={selected.nomeveicolo} />
-      <Field label="Targa" value={selected.targa} />
-      <Field label="Tipo veicolo" value={selected.tipoveicolo_id} />
-      <Field label="Data immatricolazione" value={selected.dataimmatricolazione} />
-
-      {/* TECNICI */}
-      <Field label="KW" value={selected.kw} />
-      <Field label="Cilindrata" value={selected.cilindrata} />
-
-      {/* KM */}
-      <Field label="Km attuali" value={selected.kmattuali} />
-      <Field label="Km da GPS" value={selected.kmdagps} />
-      <Field label="Km annui" value={selected.kmanno} />
-      <Field label="Km effettivi" value={selected.kmeffettivi} />
-      <Field label="Km presunti" value={selected.kmpresunti} />
-
-      {/* EDIT */}
-      {isEditing && (
-        <>
-          <input
-            value={form.nomeveicolo ?? ""}
-            onChange={(e) => setForm({ ...form, nomeveicolo: e.target.value || null })}
-          />
-          <input
-            value={form.targa ?? ""}
-            onChange={(e) => setForm({ ...form, targa: e.target.value || null })}
-          />
-          <input
-            type="number"
-            value={form.kw ?? ""}
-            onChange={(e) => setForm({ ...form, kw: e.target.value || null })}
-          />
-        </>
-      )}
-
-      {!isEditing ? (
-        <button onClick={() => setIsEditing(true)}>Modifica</button>
-      ) : (
-        <>
-          <button onClick={saveVeicolo}>Salva</button>
-          <button onClick={() => {
-            setForm({ ...selected });
-            setIsEditing(false);
-          }}>
-            Annulla
-          </button>
-        </>
-      )}
+      <table className="w-full border">
+        <thead>
+          <tr>
+            <th>Marca</th>
+            <th>Modello</th>
+            <th>Targa</th>
+            <th>Anno</th>
+            <th>Tracciamento</th>
+          </tr>
+        </thead>
+        <tbody>
+          {vehicles.map(v => (
+            <tr key={v.veicolo_id}>
+              <td>{v.marca ?? "-"}</td>
+              <td>{v.modello ?? "-"}</td>
+              <td>{v.targa ?? "-"}</td>
+              <td>{v.anno ?? "-"}</td>
+              <td className="text-center">
+                <input
+                  type="checkbox"
+                  checked={activeVehicleId === v.veicolo_id}
+                  onChange={() => toggleTracking(v.veicolo_id)}
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
