@@ -1,27 +1,64 @@
-import { supabase } from "../services/supabase";
+import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
 
-export default function Statistiche({ veicolo_id }) {
+type Props = {
+  veicoloId: string;
+};
 
-  const exportCSV = async () => {
-    const { data } = await supabase
-      .from("trackinggps")
-      .select("sessione_inizio,sessione_fine,km_sessione,durata_minuti")
-      .eq("veicolo_id", veicolo_id)
-      .eq("is_sessione", true);
+export default function Statistiche({ veicoloId }: Props) {
+  const [giornalieri, setGiornalieri] = useState<any[]>([]);
+  const [settimanali, setSettimanali] = useState<any[]>([]);
+  const [mensili, setMensili] = useState<any[]>([]);
 
-    const csv = [
-      "inizio,fine,km,minuti",
-      ...data.map(r =>
-        `${r.sessione_inizio},${r.sessione_fine},${r.km_sessione},${r.durata_minuti}`
-      )
-    ].join("\n");
+  useEffect(() => {
+    async function loadStats() {
+      const { data: g } = await supabase
+        .from("vw_km_giornalieri")
+        .select("*")
+        .eq("veicolo_id", veicoloId);
 
-    const blob = new Blob([csv], { type: "text/csv" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "statistiche.csv";
-    a.click();
-  };
+      const { data: s } = await supabase
+        .from("vw_km_settimanali")
+        .select("*")
+        .eq("veicolo_id", veicoloId);
 
-  return <button onClick={exportCSV}>Esporta CSV</button>;
+      const { data: m } = await supabase
+        .from("vw_km_mensili")
+        .select("*")
+        .eq("veicolo_id", veicoloId);
+
+      setGiornalieri(g || []);
+      setSettimanali(s || []);
+      setMensili(m || []);
+    }
+
+    loadStats();
+  }, [veicoloId]);
+
+  return (
+    <div>
+      <h2>📊 Statistiche veicolo</h2>
+
+      <h3>Giornaliere</h3>
+      {giornalieri.map(r => (
+        <div key={r.giorno}>
+          {r.giorno}: {r.km_percorsi.toFixed(2)} km
+        </div>
+      ))}
+
+      <h3>Settimanali</h3>
+      {settimanali.map(r => (
+        <div key={r.settimana}>
+          {r.settimana}: {r.km_settimana.toFixed(2)} km
+        </div>
+      ))}
+
+      <h3>Mensili</h3>
+      {mensili.map(r => (
+        <div key={r.mese}>
+          {r.mese}: {r.km_mese.toFixed(2)} km
+        </div>
+      ))}
+    </div>
+  );
 }
