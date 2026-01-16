@@ -1,6 +1,5 @@
 import { TrackingProvider } from "./context/TrackingContext";
 import Dashboard from "./pages/Dashboard";
-
 import VeicoliPage from "./pages/VeicoliPage";
 
 export default function App() {
@@ -9,7 +8,7 @@ export default function App() {
   return (
     <TrackingProvider profiloutente_id={profiloutente_id}>
       <Dashboard />
-      <VehiclesPage profiloutente_id={profiloutente_id} />
+      <VeicoliPage profiloutente_id={profiloutente_id} />
     </TrackingProvider>
   );
 }
