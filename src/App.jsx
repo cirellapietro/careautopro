@@ -1,6 +1,6 @@
 import { TrackingProvider } from "./TrackingContext";
-import Dashboard from "./Dashboard";
-import VehiclesPage from "./VehiclesPage";
+import Dashboard from "./pages/Dashboard";
+import VehiclesPage from "./pages/VehiclesPage";
 
 export default function App() {
   const profiloutente_id = "RECUPERATO_DA_SUPABASE";
