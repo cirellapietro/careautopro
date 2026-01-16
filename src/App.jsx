@@ -1,4 +1,4 @@
-import { TrackingProvider } from "./TrackingContext";
+import { TrackingProvider } from "./context/TrackingContext";
 import Dashboard from "./pages/Dashboard";
 import VehiclesPage from "./pages/VehiclesPage";
 
