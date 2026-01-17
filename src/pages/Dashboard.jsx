@@ -1,29 +1,19 @@
-// src/pages/Dashboard.jsx
 import { useTracking } from "../context/TrackingContext";
 
 export default function Dashboard() {
-  const { tracking, startTracking, stopTracking } = useTracking();
-
-  async function handleStart() {
-    const gpsAutorizzato = "geolocation" in navigator;
-
-    await startTracking({
-      veicolo_id: 1, // TODO: veicolo selezionato
-      gpsAutorizzato
-    });
-  }
+  const { trackingAttivo, startTracking, stopTracking } = useTracking();
 
   return (
-    <div>
+    <div className="page">
       <h1>Dashboard</h1>
 
-      {!tracking ? (
-        <button onClick={handleStart}>
-          Avvia tracking
+      {!trackingAttivo ? (
+        <button onClick={startTracking}>
+          ▶ Avvia tracking
         </button>
       ) : (
         <button onClick={stopTracking}>
-          Stop tracking
+          ⏹ Ferma tracking
         </button>
       )}
     </div>
