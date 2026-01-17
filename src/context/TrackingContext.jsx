@@ -1,24 +1,37 @@
 // src/context/TrackingContext.js
-import { createContext, useContext, useState, useRef } from "react";
+import { createContext, useContext, useRef, useState } from "react";
 import { supabase } from "../services/supabase";
 import { stimaKm, stimaTempo } from "../services/trackingEstimator";
 
-const TrackingContext = createContext();
+const TrackingContext = createContext(null);
 
 export function TrackingProvider({ children, profiloutente_id }) {
-  const [tracking, setTracking] = useState(false);
-  const [sessionId, setSessionId] = useState(null);
-  const startTimeRef = useRef(null);
-  const velocitaMedia = 30; // km/h (configurabile)
+  const [trackingAttivo, setTrackingAttivo] = useState(false);
+  const [sessioneId, setSessioneId] = useState(null);
 
-  // === AVVIO TRACKING ===
+  // riferimento per tracking stimato
+  const startTimeRef = useRef(null);
+
+  // velocità media usata se GPS NON autorizzato
+  const VELOCITA_MEDIA_KMH = 30;
+
+  /**
+   * AVVIO TRACKING
+   * @param {Object} params
+   * @param {string} params.veicolo_id
+   * @param {boolean} params.gpsAutorizzato
+   */
   async function startTracking({ veicolo_id, gpsAutorizzato }) {
+    if (!profiloutente_id || !veicolo_id) {
+      throw new Error("profiloutente_id o veicolo_id mancanti");
+    }
+
     startTimeRef.current = Date.now();
 
     const { data, error } = await supabase
       .from("tracking_sessions")
       .insert({
-        user_id: profiloutente_id,
+        profiloutente_id,
         veicolo_id,
         start_time: new Date().toISOString(),
         tracking_mode: gpsAutorizzato ? "gps" : "stimato"
@@ -26,41 +39,66 @@ export function TrackingProvider({ children, profiloutente_id }) {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error("Errore startTracking:", error);
+      throw error;
+    }
 
-    setSessionId(data.id);
-    setTracking(true);
+    setSessioneId(data.id);
+    setTrackingAttivo(true);
 
     if (!gpsAutorizzato) {
-      console.log("Tracking stimato avviato");
+      console.log("Tracking STIMATO avviato");
+    } else {
+      console.log("Tracking GPS avviato (Capacitor)");
     }
   }
 
-  // === STOP TRACKING ===
+  /**
+   * STOP TRACKING
+   */
   async function stopTracking() {
-    if (!sessionId) return;
+    if (!sessioneId) return;
 
     const tempoSecondi = stimaTempo(startTimeRef.current);
-    const kmStimati = stimaKm(tempoSecondi, velocitaMedia);
+    const kmStimati = stimaKm(tempoSecondi, VELOCITA_MEDIA_KMH);
 
-    await supabase.from("tracking_sessions")
-      .update({ end_time: new Date().toISOString() })
-      .eq("id", sessionId);
+    // chiusura sessione
+    const { error: errSessione } = await supabase
+      .from("tracking_sessions")
+      .update({
+        end_time: new Date().toISOString()
+      })
+      .eq("id", sessioneId);
 
-    await supabase.from("tracking_summary").insert({
-      session_id: sessionId,
-      km_totali: kmStimati,
-      tempo_totale: tempoSecondi
-    });
+    if (errSessione) {
+      console.error("Errore chiusura sessione:", errSessione);
+      throw errSessione;
+    }
 
-    setTracking(false);
-    setSessionId(null);
+    // riepilogo (per GPS reale verrà sovrascritto lato backend)
+    const { error: errSummary } = await supabase
+      .from("tracking_summary")
+      .insert({
+        session_id: sessioneId,
+        km_totali: kmStimati,
+        tempo_totale: tempoSecondi
+      });
+
+    if (errSummary) {
+      console.error("Errore inserimento summary:", errSummary);
+      throw errSummary;
+    }
+
+    setTrackingAttivo(false);
+    setSessioneId(null);
+    startTimeRef.current = null;
   }
 
   return (
     <TrackingContext.Provider
       value={{
-        tracking,
+        trackingAttivo,
         startTracking,
         stopTracking
       }}
@@ -71,5 +109,9 @@ export function TrackingProvider({ children, profiloutente_id }) {
 }
 
 export function useTracking() {
-  return useContext(TrackingContext);
+  const ctx = useContext(TrackingContext);
+  if (!ctx) {
+    throw new Error("useTracking deve essere usato dentro TrackingProvider");
+  }
+  return ctx;
 }
