@@ -1,6 +1,6 @@
 import { TrackingProvider } from "./context/TrackingContext";
 import Dashboard from "./pages/Dashboard";
-import VeicoliPage from "./pages/VeicoliPage";
+import Statistiche from "./pages/Statistiche";
 
 export default function App() {
   const profiloutente_id = "RECUPERATO_DA_SUPABASE";
@@ -8,7 +8,7 @@ export default function App() {
   return (
     <TrackingProvider profiloutente_id={profiloutente_id}>
       <Dashboard />
-      <VeicoliPage profiloutente_id={profiloutente_id} />
+      <Statistiche />
     </TrackingProvider>
   );
 }
