@@ -1,21 +1,15 @@
 import { useTracking } from "../context/TrackingContext";
 
 export default function Dashboard() {
-  const { trackingAttivo, startTracking, stopTracking } = useTracking();
+  const { gpsAttivo } = useTracking();
 
   return (
-    <div className="page">
+    <div>
       <h1>Dashboard</h1>
-
-      {!trackingAttivo ? (
-        <button onClick={startTracking}>
-          ▶ Avvia tracking
-        </button>
-      ) : (
-        <button onClick={stopTracking}>
-          ⏹ Ferma tracking
-        </button>
-      )}
+      <p>
+        Tracking GPS:{" "}
+        <strong>{gpsAttivo ? "ATTIVO" : "STIMATO"}</strong>
+      </p>
     </div>
   );
 }
