@@ -1,33 +1,72 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../services/supabase";
+import { useTracking } from "../context/TrackingContext";
 
 export default function Statistiche() {
+  const { veicoloAttivoId } = useTracking();
+
   const [giornalieri, setGiornalieri] = useState([]);
+  const [settimanali, setSettimanali] = useState([]);
+  const [mensili, setMensili] = useState([]);
 
   useEffect(() => {
-    const load = async () => {
-      const { data } = await supabase
+    if (!veicoloAttivoId) return;
+
+    const caricaStatistiche = async () => {
+      const { data: g } = await supabase
         .from("vw_km_giornalieri")
         .select("*")
+        .eq("veicolo_id", veicoloAttivoId)
         .order("giorno", { ascending: false });
 
-      setGiornalieri(data || []);
+      const { data: s } = await supabase
+        .from("vw_km_settimanali")
+        .select("*")
+        .eq("veicolo_id", veicoloAttivoId)
+        .order("settimana", { ascending: false });
+
+      const { data: m } = await supabase
+        .from("vw_km_mensili")
+        .select("*")
+        .eq("veicolo_id", veicoloAttivoId)
+        .order("mese", { ascending: false });
+
+      setGiornalieri(g || []);
+      setSettimanali(s || []);
+      setMensili(m || []);
     };
 
-    load();
-  }, []);
+    caricaStatistiche();
+  }, [veicoloAttivoId]);
+
+  if (!veicoloAttivoId) {
+    return <p>Nessun veicolo selezionato</p>;
+  }
 
   return (
-    <div className="page">
-      <h1>Statistiche</h1>
+    <div>
+      <h2>Statistiche veicolo</h2>
 
-      <ul>
-        {giornalieri.map((r, i) => (
-          <li key={i}>
-            {r.giorno} → {r.km_totali.toFixed(2)} km
-          </li>
-        ))}
-      </ul>
+      <h3>📅 Giornaliere</h3>
+      {giornalieri.map(r => (
+        <div key={r.giorno}>
+          {r.giorno} → {r.km_totali.toFixed(2)} km
+        </div>
+      ))}
+
+      <h3>🗓 Settimanali</h3>
+      {settimanali.map(r => (
+        <div key={r.settimana}>
+          {r.settimana} → {r.km_totali.toFixed(2)} km
+        </div>
+      ))}
+
+      <h3>📆 Mensili</h3>
+      {mensili.map(r => (
+        <div key={r.mese}>
+          {r.mese} → {r.km_totali.toFixed(2)} km
+        </div>
+      ))}
     </div>
   );
 }
