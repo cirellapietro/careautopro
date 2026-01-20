@@ -1,4 +1,4 @@
-name: Android Build (APK + AAB)
+name: Android Debug APK Build
 
 on:
   push:
@@ -6,47 +6,46 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-android:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 18
 
       - name: Install dependencies
         run: npm install
 
-      - name: Build web
+      - name: Build web app (Vite)
         run: npm run build
-
-      - name: Sync Capacitor Android
-        run: npx cap sync android
 
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: temurin
+          java-version: 17
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Build APK & AAB
-        working-directory: android
-        run: |
-          chmod +x gradlew
-          ./gradlew assembleRelease
-          ./gradlew bundleRelease
+      - name: Add Android platform (if missing)
+        run: npx cap add android || echo "Android already added"
 
-      - name: Upload artifacts
+      - name: Sync Capacitor Android
+        run: npx cap sync android
+
+      - name: Build Debug APK
+        run: |
+          cd android
+          ./gradlew assembleDebug
+
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: android-build
-          path: |
-            android/app/build/outputs/apk/release/*.apk
-            android/app/build/outputs/bundle/release/*.aab
+          name: careautopro-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
