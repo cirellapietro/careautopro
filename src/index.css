@@ -2,8 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =========================================================
+   GLOBAL
+   ========================================================= */
+
 :root {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, sans-serif;
 }
 
 body {
@@ -16,7 +21,18 @@ body {
   box-sizing: border-box;
 }
 
-/* === CAREAUTOPRO • Bottom Navigation Mobile === */
+/* =========================================================
+   CAREAUTOPRO • LAYOUT
+   ========================================================= */
+
+/* Contenuto principale: evita che il menu lo copra */
+.page-content {
+  padding-bottom: 80px;
+}
+
+/* =========================================================
+   CAREAUTOPRO • BOTTOM NAVIGATION (MOBILE)
+   ========================================================= */
 
 .bottom-nav {
   position: fixed;
@@ -24,7 +40,7 @@ body {
   left: 0;
   right: 0;
 
-  height: 64px;
+  height: 72px;
   padding-bottom: env(safe-area-inset-bottom);
 
   background: #ffffff;
@@ -37,6 +53,7 @@ body {
   z-index: 50;
 }
 
+/* Link e bottoni */
 .bottom-nav a,
 .bottom-nav button {
   flex: 1;
@@ -47,5 +64,53 @@ body {
   justify-content: center;
   align-items: center;
 
-  font-size: 11px;
-  color:
+  font-size: 12px;
+  font-weight: 500;
+
+  color: #374151; /* GRIGIO SCURO */
+  text-decoration: none;
+  background: none;
+  border: none;
+
+  cursor: pointer;
+}
+
+/* Icone */
+.bottom-nav svg,
+.bottom-nav img {
+  width: 22px;
+  height: 22px;
+  margin-bottom: 4px;
+}
+
+/* Stato attivo */
+.bottom-nav .active {
+  color: #2563eb; /* BLU */
+}
+
+/* Hover (desktop / web) */
+.bottom-nav a:hover,
+.bottom-nav button:hover {
+  background-color: #f3f4f6;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 768px) {
+  .bottom-nav {
+    height: 76px;
+  }
+
+  .bottom-nav a,
+  .bottom-nav button {
+    font-size: 13px;
+  }
+
+  .bottom-nav svg,
+  .bottom-nav img {
+    width: 24px;
+    height: 24px;
+  }
+}
