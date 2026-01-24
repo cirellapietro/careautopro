@@ -1,44 +1,35 @@
-import { NavLink } from "react-router-dom";
-import { Home, Car, BarChart3, User, LogOut } from "lucide-react";
+import React from 'react';
+import { Home, Car, BarChart3, User } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
 
-export default function BottomNav() {
-  const base =
-    "flex flex-col items-center justify-center gap-1 flex-1 h-full text-xs";
-  const active = "text-blue-600";
-  const inactive = "text-gray-500";
+function BottomNav() {
+  const base = "flex flex-col items-center justify-center flex-1 py-2 transition-colors";
+  const active = "text-primary";
+  const inactive = "text-gray-500 hover:text-primary";
+
+  const navItems = [
+    { icon: Home, label: 'Home', path: '/' },
+    { icon: Car, label: 'Veicoli', path: '/vehicles' },
+    { icon: BarChart3, label: 'Stats', path: '/stats' },
+    { icon: User, label: 'Profilo', path: '/profile' },
+  ];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 h-20 bg-white border-t border-gray-200 flex">
-      <NavLink to="/dashboard" className={({ isActive }) => \`\${base} \${isActive ? active : inactive}\`}>
-        <Home size={28} />
-        <span>Home</span>
-      </NavLink>
-
-      <NavLink to="/vehicles" className={({ isActive }) => \`\${base} \${isActive ? active : inactive}\`}>
-        <Car size={28} />
-        <span>Veicoli</span>
-      </NavLink>
-
-      <NavLink to="/stats" className={({ isActive }) => \`\${base} \${isActive ? active : inactive}\`}>
-        <BarChart3 size={28} />
-        <span>Statistiche</span>
-      </NavLink>
-
-      <NavLink to="/profile" className={({ isActive }) => \`\${base} \${isActive ? active : inactive}\`}>
-        <User size={28} />
-        <span>Profilo</span>
-      </NavLink>
-
-      <button
-        onClick={() => {
-          localStorage.clear();
-          window.location.href = "/login";
-        }}
-        className="\${base} text-red-500"
-      >
-        <LogOut size={28} />
-        <span>Logout</span>
-      </button>
+      {navItems.map((item) => (
+        <NavLink
+          key={item.path}
+          to={item.path}
+          className={({ isActive }) => 
+            `${base} ${isActive ? active : inactive}`
+          }
+        >
+          <item.icon size={28} />
+          <span className="text-xs mt-1">{item.label}</span>
+        </NavLink>
+      ))}
     </nav>
   );
 }
+
+export default BottomNav;
