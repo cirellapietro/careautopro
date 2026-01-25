@@ -1,9 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
 import { createClient } from '@supabase/supabase-js';
-import { LayoutDashboard, Car, User, LogOut, Plus } from 'lucide-react';
+import { LayoutDashboard, Car, User, LogOut, Plus, AlertTriangle } from 'lucide-react';
 
-const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
+// Gestore errori globale per vedere i crash su schermo
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { hasError: false, error: null }; }
+  static getDerivedStateFromError(error) { return { hasError: true, error }; }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: '20px', backgroundColor: '#fff5f5', color: '#c53030', height: '100vh' }}>
+          <AlertTriangle size={48} />
+          <h1 style={{ fontSize: '20px', fontWeight: 'bold' }}>Errore di Caricamento</h1>
+          <pre style={{ fontSize: '12px', marginTop: '10px', whiteSpace: 'pre-wrap' }}>
+            {this.state.error?.message}
+          </pre>
+          <button onClick={() => window.location.reload()} style={{ marginTop: '20px', padding: '10px', background: '#c53030', color: '#fff', border: 'none', borderRadius: '5px' }}>
+            Ricarica App
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+const supabase = createClient(import.meta.env.VITE_SUPABASE_URL || '', import.meta.env.VITE_SUPABASE_ANON_KEY || '');
 
 const BottomNav = () => {
   const loc = useLocation();
@@ -19,61 +42,29 @@ const BottomNav = () => {
       <Link to="/profile" className={`flex flex-col items-center ${active('/profile')}`}>
         <User size={22} /><span className="text-[10px] mt-1 font-bold">Profilo</span>
       </Link>
-      <button onClick={() => supabase.auth.signOut()} className="flex flex-col items-center text-gray-400">
-        <LogOut size={22} /><span className="text-[10px] mt-1 font-bold">Esci</span>
-      </button>
     </nav>
   );
 };
 
-const Dashboard = ({ user }) => (
+const Dashboard = () => (
   <div className="p-4 bg-gray-50 min-h-screen">
-    <h1 className="text-xl font-bold mb-4 text-gray-800">CareAutoPro</h1>
-    <div className="bg-white border rounded-lg p-5 shadow-sm mb-4">
-      <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">Status</p>
-      <p className="font-medium text-blue-600">Sistema Online</p>
+    <h1 className="text-xl font-bold mb-4">CareAutoPro - Pronto</h1>
+    <div className="bg-white border rounded-lg p-5 shadow-sm">
+      <p className="text-blue-600">Se vedi questo, l'app funziona correttamente!</p>
     </div>
-    <button className="fixed right-6 bottom-24 bg-blue-600 text-white p-4 rounded-full shadow-lg"><Plus size={24} /></button>
   </div>
 );
 
-const Login = () => {
-  const [e, setE] = useState('');
-  const [p, setP] = useState('');
-  const handleLogin = async (x) => {
-    x.preventDefault();
-    const { error } = await supabase.auth.signInWithPassword({ email: e, password: p });
-    if (error) alert(error.message);
-  };
-  return (
-    <div className="min-h-screen flex flex-col justify-center p-8 bg-white">
-      <h2 className="text-3xl font-black mb-8 leading-tight">CareAutoPro</h2>
-      <form onSubmit={handleLogin} className="space-y-4">
-        <input type="email" placeholder="Email" className="w-full p-4 bg-gray-50 border rounded-xl" onChange={v => setE(v.target.value)} />
-        <input type="password" placeholder="Password" className="w-full p-4 bg-gray-50 border rounded-xl" onChange={v => setP(v.target.value)} />
-        <button className="w-full bg-blue-600 text-white p-4 rounded-xl font-bold">Accedi</button>
-      </form>
-    </div>
-  );
-};
-
 export default function App() {
-  const [s, setS] = useState(null);
-  const [l, setL] = useState(true);
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => { setS(session); setL(false); });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => setS(session));
-    return () => subscription.unsubscribe();
-  }, []);
-  if (l) return null;
   return (
-    <Router>
-      <div className="max-w-md mx-auto min-h-screen">
-        <Routes>
-          <Route path="/login" element={!s ? <Login /> : <Navigate to="/" />} />
-          <Route path="/" element={s ? <><Dashboard user={s.user} /><BottomNav /></> : <Navigate to="/login" />} />
-        </Routes>
-      </div>
-    </Router>
+    <ErrorBoundary>
+      <Router>
+        <div className="max-w-md mx-auto min-h-screen bg-white">
+          <Routes>
+            <Route path="/" element={<><Dashboard /><BottomNav /></>} />
+          </Routes>
+        </div>
+      </Router>
+    </ErrorBoundary>
   );
 }
