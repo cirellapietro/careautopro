@@ -7,10 +7,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Source
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 18
 
@@ -23,7 +23,7 @@ jobs:
       - name: Install Capacitor Android
         run: |
           npm install @capacitor/android
-          npx cap add android
+          npx cap add android || true
 
       - name: Sync Capacitor
         run: npx cap sync
@@ -31,10 +31,11 @@ jobs:
       - name: Build Android App
         run: |
           cd android
+          chmod +x gradlew
           ./gradlew assembleDebug
 
       - name: Upload APK
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: CareAutoPro-Debug-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
