@@ -1,3 +1,5 @@
+#!/bin/bash
+cat << 'APP' > src/App.jsx
 import React, { useState } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 
@@ -27,30 +29,27 @@ export default function App() {
         <Routes>
           <Route path="/login" element={!isAuth ? (
             <div className="p-10 flex flex-col items-center justify-center min-h-screen text-center">
-              <div className="w-24 h-24 bg-blue-600 rounded-[2rem] flex items-center justify-center mb-6 text-white text-6xl font-black italic shadow-xl">C</div>
-              <h1 className="text-4xl font-black mb-2 text-gray-900 leading-tight">CareAutoPro</h1>
-              <p className="text-gray-500 mb-12 font-bold uppercase tracking-widest text-sm">Accedi per gestire i tuoi veicoli</p>
-              <button onClick={() => setIsAuth(true)} className="w-full py-6 bg-blue-600 text-white rounded-3xl font-black text-2xl shadow-2xl uppercase">Accedi</button>
+              <div className="w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center mb-4 text-white text-5xl font-black italic">C</div>
+              <h1 className="text-4xl font-black mb-2 text-gray-900 leading-tight tracking-tighter">CareAutoPro</h1>
+              <p className="text-gray-500 mb-8 font-bold uppercase text-xs">Accedi per gestire i tuoi veicoli</p>
+              <button onClick={() => setIsAuth(true)} className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black text-xl shadow-xl uppercase">Accedi</button>
             </div>
-          ) : <Navigate to="/" />} />
+          ) : <Navigate to="/" />}
           <Route path="/" element={isAuth ? (
-            <div className="p-8 pt-16 pb-48 text-gray-900">
+            <div className="p-8 pt-16 pb-48">
               <h1 className="text-6xl font-black italic uppercase mb-8 tracking-tighter">Dashboard</h1>
               <div className="border-t-8 border-blue-600 pt-8">
-                <h2 className="text-3xl font-black text-gray-400 uppercase mb-4 tracking-tighter italic">Statistiche</h2>
-                <p className="text-2xl font-bold text-gray-800 leading-tight font-black uppercase italic">Qui vedrai le statistiche dei tuoi veicoli.</p>
+                <h2 className="text-2xl font-black text-gray-400 uppercase mb-2">Statistiche</h2>
+                <p className="text-2xl font-bold text-gray-800">Qui vedrai le statistiche dei tuoi veicoli.</p>
               </div>
             </div>
-          ) : <Navigate to="/login" />} />
-          <Route path="/garage" element={isAuth ? (
-            <div className="p-8 pt-16 pb-48 text-center uppercase">
-              <h1 className="text-6xl font-black italic mb-10 tracking-tighter text-left">Garage</h1>
-              <div className="bg-yellow-400 p-8 rounded-[2.5rem] mb-10 shadow-lg border-4 border-black font-black text-2xl italic tracking-tighter uppercase">Monetizzazione Attiva</div>
-            </div>
-          ) : <Navigate to="/login" />} />
+          ) : <Navigate to="/login" />}
+          <Route path="/garage" element={isAuth ? <div className="p-8 pt-16 pb-48"><h1 className="text-6xl font-black italic uppercase mb-8 tracking-tighter">Garage</h1><div className="bg-yellow-400 p-8 rounded-3xl font-black text-xl italic text-center border-4 border-black">PIANO PRO: ATTIVO</div></div> : <Navigate to="/login" />} />
         </Routes>
         {isAuth && <BottomNav />}
       </div>
     </Router>
   );
 }
+APP
+npm run build && npx cap sync android && git add . && git commit -m "🚀 RECOVERY: Layout PDF e Testo Gigante" && git push origin main
