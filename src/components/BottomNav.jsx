@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../supabaseClient';
+// Import rimosso per migrazione Firebase
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
