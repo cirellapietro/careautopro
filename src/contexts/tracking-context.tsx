@@ -23,9 +23,9 @@ interface TrackingContextType {
   switchTrackingTo: (newVehicleId: string) => Promise<void>;
   trackedVehicle: Vehicle | null;
   vehicles: Vehicle[];
-  sessionDistance: number;
-  sessionDuration: number; // in seconds
-  liveSessionDistance: number; // Distanza percorsa non ancora sincronizzata nel DB
+  sessionDistance: number; // Totale km sessione corrente
+  sessionDuration: number; // in secondi
+  liveSessionDistance: number; // Distanza non ancora sincronizzata nel DB
 }
 
 const TrackingContext = createContext<TrackingContextType | undefined>(undefined);
@@ -58,7 +58,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
     }, [user, firestore]);
     const { data: vehicles } = useCollection<Vehicle>(vehiclesQuery);
     
-    // 1. CARICAMENTO INIZIALE: Ripristina lo stato dal localStorage
+    // CARICAMENTO INIZIALE: Ripristina lo stato dal localStorage
     useEffect(() => {
         if (user?.uid) {
             const userId = user.uid;
@@ -97,12 +97,11 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
         }
     }, [user?.uid]);
 
-    // 2. PERSISTENZA CLOUD: Se il DB dice che il tracciamento è attivo ma l'app è spenta, riavvia
+    // PERSISTENZA CLOUD: Rileva se il DB ha il tracciamento attivo
     useEffect(() => {
         if (user?.uid && vehicles && permissionStatus === 'granted' && !isTracking) {
             const vehicleToTrack = vehicles.find(v => v.trackingGPS === true);
             if (vehicleToTrack) {
-                console.log("Rilevato tracciamento attivo nel database per:", vehicleToTrack.name);
                 _setTrackedVehicleId(vehicleToTrack.id);
                 localStorage.setItem(`trackedVehicleId_${user.uid}`, JSON.stringify(vehicleToTrack.id));
                 localStorage.setItem(`isTracking_${user.uid}`, 'true');
@@ -111,7 +110,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
         }
     }, [vehicles, permissionStatus, isTracking, user?.uid]);
 
-    // Sincronizza i chilometri nel DB periodicamente (ogni 500 metri)
+    // Sincronizza i chilometri nel DB periodicamente (ogni 200 metri per maggiore reattività)
     const syncMileageToDb = useCallback((vehicleId: string, delta: number) => {
         if (!user || !firestore || delta <= 0) return;
         
@@ -121,11 +120,11 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
                 localStorage.setItem(`syncedDistance_${user.uid}`, distanceRef.current.toString());
             }
         }).catch(err => {
-            console.error("Errore durante la sincronizzazione dei chilometri:", err);
+            console.error("Errore sincronizzazione chilometri:", err);
         });
     }, [user, firestore]);
 
-    // 3. MOTORE DI CALCOLO: Gestisce Geolocation e Cronometro quando isTracking è TRUE
+    // MOTORE DI CALCOLO: Geolocation e Cronometro
     useEffect(() => {
         if (!isTracking || !trackedVehicleId || permissionStatus !== 'granted') {
             if (watchIdRef.current !== null) {
@@ -139,7 +138,6 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
             return;
         }
 
-        // Inizializzazione tempi per ripresa o avvio
         if (!startTimeRef.current) {
             startTimeRef.current = new Date();
             if (user?.uid) {
@@ -148,7 +146,6 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
             }
         }
 
-        // AVVIA CRONOMETRO
         durationIntervalRef.current = setInterval(() => {
             if (startTimeRef.current) {
                 const elapsedSeconds = Math.floor((Date.now() - startTimeRef.current.getTime()) / 1000);
@@ -156,7 +153,6 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
             }
         }, 1000);
 
-        // AVVIA GPS WATCHER
         watchIdRef.current = navigator.geolocation.watchPosition(
             (position) => {
                 if (lastPositionRef.current) {
@@ -167,8 +163,8 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
                         position.coords.longitude
                     );
                     
-                    // Filtro rumore GPS
-                    if (newDistance < 2) { 
+                    // Filtro rumore GPS (minimo 2 metri di spostamento per evitare drift)
+                    if (newDistance > 0.002) { 
                         distanceRef.current += newDistance;
                         setSessionDistance(distanceRef.current);
                         if (user?.uid) {
@@ -176,7 +172,8 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
                         }
 
                         const unsyncedDistance = distanceRef.current - syncedDistanceRef.current;
-                        if (unsyncedDistance >= 0.5) {
+                        // Sincronizza ogni 200 metri
+                        if (unsyncedDistance >= 0.2) {
                             syncMileageToDb(trackedVehicleId, unsyncedDistance);
                             syncedDistanceRef.current = distanceRef.current;
                             setSyncedDistance(syncedDistanceRef.current);
@@ -196,7 +193,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
             if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current);
             if (durationIntervalRef.current) clearInterval(durationIntervalRef.current);
         };
-    }, [isTracking, trackedVehicleId, permissionStatus, user?.uid, syncMileageToDb, toast]);
+    }, [isTracking, trackedVehicleId, permissionStatus, user?.uid, syncMileageToDb]);
 
     const setTrackedVehicleId = useCallback((id: string | null) => {
         _setTrackedVehicleId(id);
@@ -312,7 +309,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
             resetTrackingState();
             setIsStopping(false);
         }
-    }, [user, firestore, trackedVehicleId, toast, resetTrackingState]);
+    }, [user, firestore, trackedVehicleId, toast, resetTrackingState, syncedDistanceRef]);
 
     const switchTrackingTo = useCallback(async (newVehicleId: string) => {
         if (isTracking) {

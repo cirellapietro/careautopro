@@ -5,6 +5,8 @@ import {
   LogOut,
   Shield,
   Bell,
+  Clock,
+  Gauge,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -82,14 +84,31 @@ const UserMenu = () => {
 )}
 
 function TrackingIndicator() {
-    const { isTracking, trackedVehicle } = useTracking();
+    const { isTracking, trackedVehicle, sessionDistance, sessionDuration } = useTracking();
     if (!isTracking || !trackedVehicle) return null;
 
+    const formatDuration = (totalSeconds: number) => {
+        const h = Math.floor(totalSeconds / 3600);
+        const m = Math.floor((totalSeconds % 3600) / 60);
+        const s = totalSeconds % 60;
+        
+        if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    };
+
     return (
-        <div className="flex items-center gap-2 rounded-full bg-destructive px-3 py-1 text-[10px] font-bold text-destructive-foreground">
+        <div className="flex items-center gap-2 rounded-full bg-destructive px-3 py-1 text-[10px] font-bold text-destructive-foreground transition-all">
             <div className="h-2 w-2 rounded-full bg-white animate-pulse" />
-            <span className="hidden sm:inline">GPS ATTIVO:</span>
-            <span>{trackedVehicle.name}</span>
+            <span className="hidden md:inline uppercase">GPS Attivo:</span>
+            <span className="max-w-[80px] truncate sm:max-w-none">{trackedVehicle.name}</span>
+            <div className="flex items-center gap-3 border-l border-white/30 ml-1 pl-2">
+                <span className="flex items-center gap-1 tabular-nums">
+                    <Clock className="h-3 w-3" /> {formatDuration(sessionDuration)}
+                </span>
+                <span className="flex items-center gap-1 tabular-nums">
+                    <Gauge className="h-3 w-3" /> {sessionDistance.toFixed(2)} km
+                </span>
+            </div>
         </div>
     );
 }
@@ -128,9 +147,11 @@ function NotificationBell() {
 export function Header() {
     return (
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
-            <Link href="/dashboard">
-                <Logo />
-            </Link>
+            <div className="flex items-center gap-2">
+                <Link href="/dashboard">
+                    <Logo />
+                </Link>
+            </div>
             <div className="flex items-center gap-2 sm:gap-4">
                 <TrackingIndicator />
                 <NotificationBell />
