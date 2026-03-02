@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Loader2, Sparkles, AlertTriangle } from 'lucide-react';
+import { Loader2, Sparkles, AlertTriangle, ExternalLink } from 'lucide-react';
 import type { Vehicle } from '@/lib/types';
 
 const MaintenanceAdviceSchema = z.object({
@@ -65,14 +65,39 @@ export function MaintenanceAdvisorForm({ vehicle }: { vehicle: Vehicle }) {
     });
   };
 
+  const renderError = (message: string) => {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const parts = message.split(urlRegex);
+    return (
+      <div className="space-y-2">
+        <p>{parts.map((part, i) => {
+          if (part.match(urlRegex)) {
+            return (
+              <a 
+                key={i} 
+                href={part} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="inline-flex items-center gap-1 font-bold text-primary underline decoration-2 underline-offset-2 hover:text-accent"
+              >
+                Abilita API qui <ExternalLink className="h-3 w-3" />
+              </a>
+            );
+          }
+          return part;
+        })}</p>
+      </div>
+    );
+  };
+
 
   return (
     <div className="grid gap-8 md:grid-cols-2">
       <Card>
         <CardHeader>
-          <CardTitle className="font-headline">Assistente Manutenzione AI</CardTitle>
+          <CardTitle className="font-headline">Parametri di Analisi AI</CardTitle>
           <CardDescription>
-            Inserisci i dati del tuo veicolo per ricevere un consiglio personalizzato dal nostro assistente AI.
+            Affina i dati del veicolo per ricevere un consiglio personalizzato.
           </CardDescription>
         </CardHeader>
         <Form {...form}>
@@ -105,9 +130,9 @@ export function MaintenanceAdvisorForm({ vehicle }: { vehicle: Vehicle }) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="aggressive">Aggressivo</SelectItem>
-                        <SelectItem value="moderate">Moderato</SelectItem>
-                        <SelectItem value="conservative">Prudente</SelectItem>
+                        <SelectItem value="aggressive">Aggressivo (Uso intenso)</SelectItem>
+                        <SelectItem value="moderate">Moderato (Misto)</SelectItem>
+                        <SelectItem value="conservative">Prudente (Solo città/extraurbano)</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -117,7 +142,8 @@ export function MaintenanceAdvisorForm({ vehicle }: { vehicle: Vehicle }) {
             </CardContent>
             <CardFooter>
               <Button type="submit" disabled={isPending} className="w-full">
-                {isPending ? <Loader2 className="animate-spin" /> : "Ottieni Consiglio dall'AI"}
+                {isPending ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                Analizza con IA
               </Button>
             </CardFooter>
           </form>
@@ -126,7 +152,7 @@ export function MaintenanceAdvisorForm({ vehicle }: { vehicle: Vehicle }) {
 
       <div className="space-y-4">
         {state.advice && (
-          <Card className="bg-secondary">
+          <Card className="bg-secondary animate-in fade-in slide-in-from-right-4">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 font-headline">
                 <Sparkles className="text-accent" />
@@ -136,34 +162,46 @@ export function MaintenanceAdvisorForm({ vehicle }: { vehicle: Vehicle }) {
             <CardContent className="space-y-4">
               <div>
                 <h3 className="font-semibold flex items-center gap-2">
-                  <AlertTriangle className={`
-                    ${state.advice.urgency === 'high' ? 'text-destructive' : ''}
-                    ${state.advice.urgency === 'medium' ? 'text-yellow-500' : ''}
-                    ${state.advice.urgency === 'low' ? 'text-green-500' : ''}
-                  `} />
-                  Urgenza: {state.advice.urgency}
+                  <AlertTriangle className={cn(
+                    "h-4 w-4",
+                    state.advice.urgency?.toLowerCase() === 'high' ? 'text-destructive' : 
+                    state.advice.urgency?.toLowerCase() === 'medium' ? 'text-yellow-500' : 'text-green-500'
+                  )} />
+                  Urgenza: <span className="capitalize">{state.advice.urgency}</span>
                 </h3>
-                <p className="text-sm text-muted-foreground mt-1">{state.advice.advice}</p>
+                <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{state.advice.advice}</p>
               </div>
-              <div>
+              <div className="pt-2 border-t">
                 <h3 className="font-semibold">Interventi Suggeriti</h3>
-                <p className="text-sm text-muted-foreground mt-1">{state.advice.suggestedInterventions}</p>
+                <p className="text-sm text-muted-foreground mt-2 leading-relaxed italic">{state.advice.suggestedInterventions}</p>
               </div>
             </CardContent>
           </Card>
         )}
         {state.error && (
-          <Card className="border-destructive">
+          <Card className="border-destructive bg-destructive/5 animate-in shake-1">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 font-headline text-destructive">
+              <CardTitle className="flex items-center gap-2 font-headline text-destructive text-lg">
                 <AlertTriangle />
-                Errore
+                Azione Richiesta
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <p>{state.error}</p>
+            <CardContent className="text-sm text-destructive font-medium">
+              {renderError(state.error)}
             </CardContent>
           </Card>
+        )}
+        {!state.advice && !state.error && !isPending && (
+            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground border-2 border-dashed rounded-xl h-full">
+                <Sparkles className="h-12 w-12 mb-4 opacity-10" />
+                <p className="text-sm">Configura i parametri e avvia l'analisi</p>
+            </div>
+        )}
+        {isPending && (
+            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground bg-muted/20 rounded-xl h-full">
+                <Loader2 className="h-12 w-12 mb-4 animate-spin text-primary" />
+                <p className="text-sm font-bold animate-pulse">L'IA sta elaborando i dati...</p>
+            </div>
         )}
       </div>
     </div>

@@ -27,38 +27,6 @@ const MaintenanceAdviceOutputSchema = z.object({
 });
 export type MaintenanceAdviceOutput = z.infer<typeof MaintenanceAdviceOutputSchema>;
 
-export async function getMaintenanceAdvice(input: MaintenanceAdviceInput): Promise<MaintenanceAdviceOutput | { error: string }> {
-  try {
-    return await maintenanceAdviceFlow(input);
-  } catch (e: any) {
-    const errorMsg = e.message || String(e);
-    console.error(`Genkit flow 'maintenanceAdviceFlow' failed: ${errorMsg}`);
-    
-    // Check for API Key specific errors
-    const isApiKeyError = errorMsg.includes('API_KEY_INVALID') || 
-                          errorMsg.includes('not authorized') || 
-                          errorMsg.includes('invalid') ||
-                          errorMsg.includes('key');
-
-    // Check for API Disabled errors
-    const isApiDisabledError = errorMsg.includes('Generative Language API') || 
-                               errorMsg.includes('has not been used') ||
-                               errorMsg.includes('disabled') ||
-                               errorMsg.includes('non è attiva') ||
-                               errorMsg.includes('403');
-
-    if (isApiKeyError && !isApiDisabledError) {
-        return { error: "La chiave API per Gemini non è valida o è scaduta. Controlla la configurazione nel file .env." };
-    }
-    
-    if (isApiDisabledError) {
-        return { error: "L'API Generative Language non è attiva nel tuo progetto Google Cloud. Abilitala su: https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com" };
-    }
-    
-    return { error: "Si è verificato un problema durante la comunicazione con l'assistente AI. Per favore assicurati di aver abilitato l'API Generative Language nella tua console Google Cloud." };
-  }
-}
-
 const prompt = ai.definePrompt({
   name: 'maintenanceAdvicePrompt',
   input: {schema: MaintenanceAdviceInputSchema},
@@ -89,3 +57,33 @@ const maintenanceAdviceFlow = ai.defineFlow(
     return output;
   }
 );
+
+export async function getMaintenanceAdvice(input: MaintenanceAdviceInput): Promise<MaintenanceAdviceOutput | { error: string }> {
+  try {
+    return await maintenanceAdviceFlow(input);
+  } catch (e: any) {
+    const errorMsg = e.message || String(e);
+    console.error(`Genkit flow 'maintenanceAdviceFlow' failed: ${errorMsg}`);
+    
+    const isApiKeyError = errorMsg.includes('API_KEY_INVALID') || 
+                          errorMsg.includes('not authorized') || 
+                          errorMsg.includes('invalid') ||
+                          errorMsg.includes('key');
+
+    const isApiDisabledError = errorMsg.includes('Generative Language API') || 
+                               errorMsg.includes('has not been used') ||
+                               errorMsg.includes('disabled') ||
+                               errorMsg.includes('non è attiva') ||
+                               errorMsg.includes('403');
+
+    if (isApiKeyError && !isApiDisabledError) {
+        return { error: "La chiave API per Gemini non è valida o è scaduta. Controlla la configurazione nel file .env." };
+    }
+    
+    if (isApiDisabledError) {
+        return { error: "L'API Generative Language non è attiva nel tuo progetto Google Cloud. Abilitala su: https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com" };
+    }
+    
+    return { error: "Si è verificato un problema durante la comunicazione con l'assistente AI. Per favore assicurati di aver abilitato l'API Generative Language nella tua console Google Cloud." };
+  }
+}
