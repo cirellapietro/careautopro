@@ -58,7 +58,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
     }, [user, firestore]);
     const { data: vehicles } = useCollection<Vehicle>(vehiclesQuery);
     
-    // CARICAMENTO INIZIALE: Ripristina lo stato dal localStorage
+    // CARICAMENTO INIZIALE: Ripristina lo stato dal localStorage per resilienza ai refresh
     useEffect(() => {
         if (user?.uid) {
             const userId = user.uid;
@@ -97,7 +97,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
         }
     }, [user?.uid]);
 
-    // PERSISTENZA CLOUD: Rileva se il DB ha il tracciamento attivo
+    // PERSISTENZA CLOUD: Rileva se il DB ha il tracciamento attivo (es. attivato da altro device)
     useEffect(() => {
         if (user?.uid && vehicles && permissionStatus === 'granted' && !isTracking) {
             const vehicleToTrack = vehicles.find(v => v.trackingGPS === true);
@@ -110,7 +110,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
         }
     }, [vehicles, permissionStatus, isTracking, user?.uid]);
 
-    // Sincronizza i chilometri nel DB periodicamente (ogni 200 metri per maggiore reattività)
+    // Sincronizza i chilometri nel DB periodicamente
     const syncMileageToDb = useCallback((vehicleId: string, delta: number) => {
         if (!user || !firestore || delta <= 0) return;
         
@@ -155,38 +155,53 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
 
         watchIdRef.current = navigator.geolocation.watchPosition(
             (position) => {
-                if (lastPositionRef.current) {
-                    const newDistance = calculateDistance(
-                        lastPositionRef.current.latitude,
-                        lastPositionRef.current.longitude,
-                        position.coords.latitude,
-                        position.coords.longitude
-                    );
-                    
-                    // Filtro rumore GPS (minimo 2 metri di spostamento per evitare drift)
-                    if (newDistance > 0.002) { 
-                        distanceRef.current += newDistance;
-                        setSessionDistance(distanceRef.current);
-                        if (user?.uid) {
-                            localStorage.setItem(`sessionDistance_${user.uid}`, distanceRef.current.toString());
-                        }
+                // Filtro qualità: ignora letture con precisione peggiore di 60 metri
+                if (position.coords.accuracy > 60) return;
 
-                        const unsyncedDistance = distanceRef.current - syncedDistanceRef.current;
-                        // Sincronizza ogni 200 metri
-                        if (unsyncedDistance >= 0.2) {
-                            syncMileageToDb(trackedVehicleId, unsyncedDistance);
-                            syncedDistanceRef.current = distanceRef.current;
-                            setSyncedDistance(syncedDistanceRef.current);
-                        }
-                    }
+                if (!lastPositionRef.current) {
+                    lastPositionRef.current = position.coords;
+                    return;
                 }
-                lastPositionRef.current = position.coords;
+
+                const d = calculateDistance(
+                    lastPositionRef.current.latitude,
+                    lastPositionRef.current.longitude,
+                    position.coords.latitude,
+                    position.coords.longitude
+                );
+                
+                // Filtro rumore GPS: minimo 3 metri di spostamento per accumulare
+                // CRITICO: Aggiorniamo lastPositionRef SOLO se lo spostamento è contato,
+                // così i piccoli spostamenti si sommano nel tempo.
+                if (d > 0.003) { 
+                    distanceRef.current += d;
+                    setSessionDistance(distanceRef.current);
+                    
+                    if (user?.uid) {
+                        localStorage.setItem(`sessionDistance_${user.uid}`, distanceRef.current.toString());
+                    }
+
+                    const unsyncedDistance = distanceRef.current - syncedDistanceRef.current;
+                    // Sincronizza ogni 200 metri
+                    if (unsyncedDistance >= 0.2) {
+                        syncMileageToDb(trackedVehicleId, unsyncedDistance);
+                        syncedDistanceRef.current = distanceRef.current;
+                        setSyncedDistance(syncedDistanceRef.current);
+                    }
+
+                    // Aggiorna il punto di riferimento solo dopo un calcolo valido
+                    lastPositionRef.current = position.coords;
+                }
             },
             (error) => {
                 console.error("GPS Error:", error);
                 if (error.code === 1) setPermissionStatus('denied');
             },
-            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+            { 
+                enableHighAccuracy: true, 
+                timeout: 10000, 
+                maximumAge: 0 
+            }
         );
 
         return () => {
@@ -347,7 +362,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
         vehicles: vehicles || [],
         sessionDistance,
         sessionDuration,
-        liveSessionDistance: sessionDistance - syncedDistance,
+        liveSessionDistance: Math.max(0, sessionDistance - syncedDistance),
     }), [permissionStatus, isTracking, isStopping, trackedVehicleId, setTrackedVehicleId, startTracking, stopTracking, switchTrackingTo, trackedVehicle, vehicles, sessionDistance, sessionDuration, syncedDistance]);
 
     return (
