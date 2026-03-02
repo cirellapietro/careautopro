@@ -1,3 +1,4 @@
+
 'use client';
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -68,7 +69,9 @@ export default function SignupForm() {
       await signUpWithEmail(values.email, values.password, values.fullName);
       router.push("/dashboard");
     } catch (e: any) {
-      if (e.code === 'auth/email-already-in-use') {
+      if (e.code === 'auth/operation-not-allowed') {
+        setError("La registrazione tramite Email/Password non è abilitata nella Console Firebase. Abilitala sotto Authentication > Sign-in method.");
+      } else if (e.code === 'auth/email-already-in-use') {
         setError("Questa email è già in uso. Prova ad accedere.");
       } else {
         setError("Si è verificato un errore durante la registrazione. Riprova.");
@@ -84,7 +87,11 @@ export default function SignupForm() {
       await signInWithGoogle();
       router.push("/dashboard");
     } catch (e: any) {
-      setError("Impossibile registrarsi con Google. Riprova.");
+      if (e.code === 'auth/operation-not-allowed') {
+        setError("L'accesso con Google non è abilitato nella Console Firebase. Abilitala sotto Authentication > Sign-in method.");
+      } else {
+        setError("Impossibile registrarsi con Google. Riprova.");
+      }
       console.error(e);
     } finally {
       setIsGoogleLoading(false);

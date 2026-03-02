@@ -1,3 +1,4 @@
+
 'use client';
 import Link from "next/link"
 import { useRouter } from "next/navigation";
@@ -67,7 +68,11 @@ export default function LoginForm() {
       await signInWithEmail(values.email, values.password);
       router.push("/dashboard");
     } catch (e: any) {
-      setError("Credenziali non valide. Riprova.");
+      if (e.code === 'auth/operation-not-allowed') {
+        setError("Il metodo di accesso Email/Password non è abilitato nella Console Firebase. Abilitalo sotto Authentication > Sign-in method.");
+      } else {
+        setError("Credenziali non valide. Riprova.");
+      }
       console.error(e);
     }
   };
@@ -79,7 +84,11 @@ export default function LoginForm() {
       await signInWithGoogle();
       router.push("/dashboard");
     } catch (e: any) {
-      setError("Impossibile accedere con Google. Riprova.");
+      if (e.code === 'auth/operation-not-allowed') {
+        setError("L'accesso con Google non è abilitato nella Console Firebase. Abilitalo sotto Authentication > Sign-in method.");
+      } else {
+        setError("Impossibile accedere con Google. Riprova.");
+      }
       console.error(e);
     } finally {
       setIsGoogleLoading(false);
