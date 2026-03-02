@@ -13,8 +13,6 @@ import {
   query,
   where,
   getDocs,
-  updateDoc,
-  addDoc
 } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -115,7 +113,7 @@ export function AddVehicleForm({ open, onOpenChange }: AddVehicleFormProps) {
       try {
         const vehicleTypesQuery = query(collection(firestore, 'vehicleTypes'), where('dataoraelimina', '==', null));
         const querySnapshot = await getDocs(vehicleTypesQuery);
-        const types = querySnapshot.docs.map(doc => ({ ...doc.data() }) as VehicleType);
+        const types = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as VehicleType);
         setVehicleTypes(types);
       } catch (serverError) {
         const permissionError = new FirestorePermissionError({
@@ -235,45 +233,95 @@ export function AddVehicleForm({ open, onOpenChange }: AddVehicleFormProps) {
 
     try {
         const mileage = values.currentMileage ?? suggestedCurrentMileage ?? selectedVehicleType.averageAnnualMileage;
+        const regDate = new Date(values.registrationDate);
+        const today = new Date();
+        
+        // Calcolo mesi passati
+        const monthsPassed = (today.getFullYear() - regDate.getFullYear()) * 12 + (today.getMonth() - regDate.getMonth());
 
+        const newVehicleRef = doc(collection(firestore, `users/${user.uid}/vehicles`));
         const newVehicleData = {
           ...values,
+          id: newVehicleRef.id,
           userId: user.uid,
           make,
           model,
           type: selectedVehicleType.name,
           currentMileage: mileage,
-          lastMaintenanceDate: new Date().toISOString().split('T')[0],
-          createdAt: new Date().toISOString(),
+          lastMaintenanceDate: today.toISOString().split('T')[0],
+          createdAt: today.toISOString(),
           dataoraelimina: null,
         };
 
-        const newVehicleRef = await addDoc(collection(firestore, `users/${user.uid}/vehicles`), newVehicleData);
-        await updateDoc(newVehicleRef, { id: newVehicleRef.id });
+        const batch = writeBatch(firestore);
+        batch.set(newVehicleRef, newVehicleData);
 
-        const firstBatch = writeBatch(firestore);
+        // Recupero controlli generici per il tipo veicolo
         const checksCollectionRef = collection(firestore, `vehicleTypes/${values.vehicleTypeId}/maintenanceChecks`);
         const checksQuery = query(checksCollectionRef, where('dataoraelimina', '==', null));
         const checksSnap = await getDocs(checksQuery);
         const genericChecks = checksSnap.docs.map(d => d.data());
         
         for (const check of genericChecks) {
-            const newInterventionRef = doc(collection(newVehicleRef, 'maintenanceInterventions'));
-            firstBatch.set(newInterventionRef, {
-                id: newInterventionRef.id,
+            // Calcolo quante volte l'intervento è già avvenuto in passato
+            let pastOccurrences = 0;
+            if (check.intervalMileage) {
+                pastOccurrences = Math.floor(mileage / check.intervalMileage);
+            }
+            if (check.intervalTime) {
+                const timeOccurrences = Math.floor(monthsPassed / check.intervalTime);
+                pastOccurrences = Math.max(pastOccurrences, timeOccurrences);
+            }
+
+            // Inseriamo lo storico (ultimi 2 interventi se presenti)
+            for (let i = 1; i <= Math.min(pastOccurrences, 2); i++) {
+                const pastInterventionRef = doc(collection(newVehicleRef, 'maintenanceInterventions'));
+                batch.set(pastInterventionRef, {
+                    id: pastInterventionRef.id,
+                    vehicleId: newVehicleRef.id,
+                    description: check.description,
+                    status: 'Completato',
+                    urgency: 'Bassa',
+                    notes: `Storico generato automaticamente (occorrenza n. ${pastOccurrences - i + 1}).`,
+                    completionDate: today.toISOString().split('T')[0],
+                    dataoraelimina: null,
+                });
+            }
+
+            // Inseriamo il prossimo intervento "Richiesto" o "Pianificato"
+            const nextInterventionRef = doc(collection(newVehicleRef, 'maintenanceInterventions'));
+            const isDue = pastOccurrences > 0 || (check.intervalMileage && mileage >= check.intervalMileage * 0.9);
+            
+            batch.set(nextInterventionRef, {
+                id: nextInterventionRef.id,
                 vehicleId: newVehicleRef.id,
                 description: check.description,
-                status: 'Richiesto',
-                urgency: 'Media',
-                notes: `Intervento generato automaticamente.`,
-                scheduledDate: new Date().toISOString(),
+                status: isDue ? 'Richiesto' : 'Pianificato',
+                urgency: isDue ? 'Alta' : 'Media',
+                notes: `Prossima scadenza calcolata automaticamente.`,
+                scheduledDate: today.toISOString(),
                 dataoraelimina: null,
             });
+
+            // Creazione Alert se l'intervento è "Richiesto"
+            if (isDue) {
+                const alertRef = doc(collection(firestore, `users/${user.uid}/alerts`));
+                batch.set(alertRef, {
+                    id: alertRef.id,
+                    userId: user.uid,
+                    message: `Il controllo "${check.description}" per il tuo veicolo ${values.name} è in scadenza o scaduto.`,
+                    type: 'maintenance',
+                    timestamp: today.toISOString(),
+                    isRead: false,
+                    dataoraelimina: null,
+                });
+            }
         }
 
-        await firstBatch.commit();
-        toast({ title: 'Veicolo creato!', description: 'Ricerca interventi specifici in corso...' });
+        await batch.commit();
+        toast({ title: 'Veicolo creato!', description: 'Storico interventi generato con successo.' });
 
+        // Tenta di arricchire con AI dopo il commit principale
         const aiChecksResult = await fetchMaintenancePlan({ make, model });
         
         if (!('error' in aiChecksResult) && aiChecksResult.length > 0) {
@@ -290,18 +338,18 @@ export function AddVehicleForm({ open, onOpenChange }: AddVehicleFormProps) {
                     status: 'Pianificato',
                     urgency: 'Media',
                     notes: `Suggerito dall'AI per ${make} ${model}.`,
+                    scheduledDate: today.toISOString(),
                     dataoraelimina: null,
                 });
             }
             await aiBatch.commit();
             toast({ title: 'Suggerimenti AI aggiunti!' });
-        } else if ('error' in aiChecksResult && aiChecksResult.error.includes('IA generativa non è attiva')) {
-             toast({ variant: 'destructive', title: 'AI Non Disponibile', description: "Abilita l'API nel cloud per ricevere suggerimenti specifici per il modello." });
         }
         
         setNewVehicleId(newVehicleRef.id);
 
     } catch (serverError) {
+        console.error("Errore salvataggio veicolo:", serverError);
         const permissionError = new FirestorePermissionError({
           path: `users/${user.uid}/vehicles`,
           operation: 'create',
@@ -328,7 +376,7 @@ export function AddVehicleForm({ open, onOpenChange }: AddVehicleFormProps) {
             <>
                 <DialogHeader>
                   <DialogTitle>Veicolo Aggiunto!</DialogTitle>
-                  <DialogDescription>Abbiamo generato gli interventi di base. Aggiorna le date reali per una precisione maggiore.</DialogDescription>
+                  <DialogDescription>Abbiamo generato lo storico e gli interventi futuri. Controlla il piano di manutenzione.</DialogDescription>
                 </DialogHeader>
                 <DialogFooter className="sm:justify-start gap-2 pt-4">
                     <Button onClick={() => { router.push(`/dashboard/vehicles/view?id=${newVehicleId}`); handleClose(); }}>Vai al Veicolo</Button>
@@ -339,7 +387,7 @@ export function AddVehicleForm({ open, onOpenChange }: AddVehicleFormProps) {
             <>
               <DialogHeader>
                 <DialogTitle>Aggiungi Nuovo Veicolo</DialogTitle>
-                <DialogDescription>Inserisci i dettagli del veicolo per generare il piano di manutenzione.</DialogDescription>
+                <DialogDescription>Inserisci i dettagli del veicolo per generare il piano di manutenzione e lo storico.</DialogDescription>
               </DialogHeader>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
