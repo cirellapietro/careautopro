@@ -32,10 +32,15 @@ export async function fetchMaintenancePlan(input: MaintenancePlanInput): Promise
     return await fetchMaintenancePlanFlow(input);
   } catch(e: any) {
     console.error(`Genkit flow 'fetchMaintenancePlan' failed: ${e.message}`);
-    if (e.message?.includes('Generative Language API has not been used')) {
-        return { error: "L'API per l'IA generativa non è attiva. Abilitala nella console Google Cloud." };
+    
+    const isApiError = e.message?.includes('Generative Language API') || 
+                       e.message?.includes('has not been used') ||
+                       e.message?.includes('disabled');
+
+    if (isApiError) {
+        return { error: "L'IA non può generare piani personalizzati al momento perché l'API Generative Language non è attiva nel tuo account Google Cloud." };
     }
-    return { error: "Impossibile recuperare il piano di manutenzione AI." };
+    return { error: "Impossibile recuperare il piano di manutenzione AI per questo modello." };
   }
 }
 

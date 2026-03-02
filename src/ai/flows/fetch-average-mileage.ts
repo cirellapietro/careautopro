@@ -27,10 +27,15 @@ export async function fetchAverageMileage(input: FetchAverageMileageInput): Prom
     return await fetchAverageMileageFlow(input);
   } catch (e: any) {
     console.error(`Genkit flow 'fetchAverageMileage' failed: ${e.message}`);
-    if (e.message?.includes('Generative Language API has not been used')) {
-        return { error: "L'API per l'IA generativa non è attiva. Abilitala nella console Google Cloud." };
+    
+    const isApiError = e.message?.includes('Generative Language API') || 
+                       e.message?.includes('has not been used') ||
+                       e.message?.includes('disabled');
+
+    if (isApiError) {
+        return { error: "L'API per l'IA generativa non è attiva. Abilitala nella console Google Cloud per ricevere suggerimenti intelligenti sul chilometraggio." };
     }
-    return { error: "Impossibile recuperare il chilometraggio medio." };
+    return { error: "Impossibile recuperare il chilometraggio medio tramite IA." };
   }
 }
 

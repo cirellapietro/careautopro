@@ -32,11 +32,16 @@ export async function getMaintenanceAdvice(input: MaintenanceAdviceInput): Promi
     return await maintenanceAdviceFlow(input);
   } catch (e: any) {
     console.error(`Genkit flow 'maintenanceAdviceFlow' failed: ${e.message}`);
-    // Check if it's the specific "API not enabled" error
-    if (e.message?.includes('Generative Language API has not been used')) {
-        return { error: "L'API per l'IA generativa non è attiva. Abilitala nella console Google Cloud per questo progetto (705618426785)." };
+    
+    const isApiError = e.message?.includes('Generative Language API') || 
+                       e.message?.includes('has not been used') ||
+                       e.message?.includes('disabled');
+
+    if (isApiError) {
+        return { error: "L'API per l'IA generativa (Gemini) non è attiva. Abilitala nella console Google Cloud per il progetto 705618426785 per ricevere consigli personalizzati." };
     }
-    return { error: "Si è verificato un errore imprevisto durante l'analisi AI." };
+    
+    return { error: "Si è verificato un errore durante l'analisi AI. Per favore riprova più tardi o verifica la connessione." };
   }
 }
 

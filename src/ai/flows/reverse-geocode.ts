@@ -28,8 +28,13 @@ export async function reverseGeocode(input: ReverseGeocodeInput): Promise<Revers
     return await reverseGeocodeFlow(input);
   } catch(e: any) {
     console.error(`Genkit flow 'reverseGeocode' failed: ${e.message}`);
-    if (e.message?.includes('Generative Language API has not been used')) {
-        return { error: "L'API per l'IA generativa non è attiva. Abilitala nella console Google Cloud per questo progetto (705618426785)." };
+    
+    const isApiError = e.message?.includes('Generative Language API') || 
+                       e.message?.includes('has not been used') ||
+                       e.message?.includes('disabled');
+
+    if (isApiError) {
+        return { error: "L'API per l'IA generativa non è attiva. Abilitala nella console Google Cloud per abilitare la localizzazione intelligente." };
     }
     return { error: "Si è verificato un errore durante la geocodifica." };
   }
