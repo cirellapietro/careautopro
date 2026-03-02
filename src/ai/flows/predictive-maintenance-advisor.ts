@@ -34,18 +34,24 @@ export async function getMaintenanceAdvice(input: MaintenanceAdviceInput): Promi
     const errorMsg = e.message || String(e);
     console.error(`Genkit flow 'maintenanceAdviceFlow' failed: ${errorMsg}`);
     
-    const isApiError = errorMsg.includes('Generative Language API') || 
-                       errorMsg.includes('has not been used') ||
-                       errorMsg.includes('disabled') ||
-                       errorMsg.includes('403') ||
-                       errorMsg.includes('API_KEY_INVALID') ||
-                       errorMsg.includes('not authorized');
+    const isApiKeyError = errorMsg.includes('API_KEY_INVALID') || 
+                          errorMsg.includes('not authorized') || 
+                          errorMsg.includes('invalid') ||
+                          errorMsg.includes('403');
 
-    if (isApiError) {
-        return { error: "L'API per l'IA generativa (Gemini) non è attiva o la chiave non è valida. Assicurati di aver abilitato la 'Generative Language API' nella console Google Cloud per il progetto associato." };
+    const isApiDisabledError = errorMsg.includes('Generative Language API') || 
+                               errorMsg.includes('has not been used') ||
+                               errorMsg.includes('disabled');
+
+    if (isApiKeyError) {
+        return { error: "La chiave API per Gemini non è valida o è scaduta. Controlla la configurazione nel file .env." };
     }
     
-    return { error: "Si è verificato un problema durante l'analisi AI. Verifica la tua connessione internet o riprova tra qualche minuto." };
+    if (isApiDisabledError) {
+        return { error: "L'API Generative Language non è attiva nel tuo progetto Google Cloud. Abilitala per ricevere consigli dall'IA." };
+    }
+    
+    return { error: "Si è verificato un problema durante la comunicazione con l'assistente AI. Riprova tra poco." };
   }
 }
 
@@ -53,18 +59,17 @@ const prompt = ai.definePrompt({
   name: 'maintenanceAdvicePrompt',
   input: {schema: MaintenanceAdviceInputSchema},
   output: {schema: MaintenanceAdviceOutputSchema},
-  prompt: `You are an expert automotive maintenance advisor. Based on the following information about the vehicle, provide advice on upcoming maintenance needs, the urgency of the advice, and suggest specific maintenance interventions.
+  prompt: `Sei un esperto consulente di manutenzione automobilistica. Sulla base delle seguenti informazioni sul veicolo, fornisci consigli sulle prossime necessità di manutenzione, il livello di urgenza e suggerisci interventi specifici.
 
-Vehicle Type: {{{vehicleType}}}
-Kilometers Driven: {{{kilometersDriven}}}
-Last Maintenance Date: {{{lastMaintenanceDate}}}
-Maintenance History: {{{maintenanceHistory}}}
-Driving Style: {{{drivingStyle}}}
+Tipo di Veicolo: {{{vehicleType}}}
+Chilometri Percorsi: {{{kilometersDriven}}}
+Data Ultima Manutenzione: {{{lastMaintenanceDate}}}
+Storico Manutenzione: {{{maintenanceHistory}}}
+Stile di Guida: {{{drivingStyle}}}
 
-Respond in Italian in a professional and helpful manner.
-Consider common issues for the vehicle type and driving style.
-
-Make sure to include suggestedInterventions based on vehicle data.
+Rispondi in modo professionale e utile in lingua Italiana.
+Considera i problemi comuni per il tipo di veicolo e lo stile di guida specificati.
+Assicurati di includere suggestedInterventions basati sui dati reali del veicolo.
 `,
 });
 
