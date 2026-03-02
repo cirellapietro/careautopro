@@ -11,6 +11,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
+// Definizione degli schemi PRIMA della loro referenza nel prompt/flow
 const MaintenanceAdviceInputSchema = z.object({
   vehicleType: z.string().describe('The type of the vehicle (e.g., gasoline, diesel, electric).'),
   kilometersDriven: z.number().describe('The total kilometers driven by the vehicle.'),
@@ -18,13 +19,14 @@ const MaintenanceAdviceInputSchema = z.object({
   maintenanceHistory: z.string().describe('A summary of the vehicle maintenance history.'),
   drivingStyle: z.string().describe('The user driving style (e.g., aggressive, moderate, conservative).'),
 });
-export type MaintenanceAdviceInput = z.infer<typeof MaintenanceAdviceInputSchema>;
 
 const MaintenanceAdviceOutputSchema = z.object({
   advice: z.string().describe('AI-generated advice on upcoming maintenance needs.'),
   urgency: z.string().describe('The urgency level of the advice (e.g., high, medium, low).'),
   suggestedInterventions: z.string().describe('Suggested maintenance interventions based on vehicle data.'),
 });
+
+export type MaintenanceAdviceInput = z.infer<typeof MaintenanceAdviceInputSchema>;
 export type MaintenanceAdviceOutput = z.infer<typeof MaintenanceAdviceOutputSchema>;
 
 const prompt = ai.definePrompt({
@@ -74,14 +76,15 @@ export async function getMaintenanceAdvice(input: MaintenanceAdviceInput): Promi
                                errorMsg.includes('has not been used') ||
                                errorMsg.includes('disabled') ||
                                errorMsg.includes('non è attiva') ||
-                               errorMsg.includes('403');
+                               errorMsg.includes('403') ||
+                               errorMsg.includes('activation');
 
-    if (isApiKeyError && !isApiDisabledError) {
-        return { error: "La chiave API per Gemini non è valida o è scaduta. Controlla la configurazione nel file .env." };
-    }
-    
     if (isApiDisabledError) {
         return { error: "L'API Generative Language non è attiva nel tuo progetto Google Cloud. Abilitala su: https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com" };
+    }
+
+    if (isApiKeyError) {
+        return { error: "La chiave API per Gemini non è valida o è scaduta. Controlla la configurazione nel file .env." };
     }
     
     return { error: "Si è verificato un problema durante la comunicazione con l'assistente AI. Per favore assicurati di aver abilitato l'API Generative Language nella tua console Google Cloud." };

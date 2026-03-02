@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Loader2, Sparkles, AlertTriangle, ExternalLink } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import type { Vehicle } from '@/lib/types';
 
 const MaintenanceAdviceSchema = z.object({
@@ -69,23 +70,27 @@ export function MaintenanceAdvisorForm({ vehicle }: { vehicle: Vehicle }) {
     const urlRegex = /(https?:\/\/[^\s]+)/g;
     const parts = message.split(urlRegex);
     return (
-      <div className="space-y-2">
-        <p>{parts.map((part, i) => {
+      <div className="space-y-4">
+        <p className="leading-relaxed">{parts.map((part, i) => {
           if (part.match(urlRegex)) {
-            return (
-              <a 
-                key={i} 
-                href={part} 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="inline-flex items-center gap-1 font-bold text-primary underline decoration-2 underline-offset-2 hover:text-accent"
-              >
-                Abilita API qui <ExternalLink className="h-3 w-3" />
-              </a>
-            );
+            return null; // Non mostriamo il link nel testo perché aggiungiamo il pulsante sotto
           }
           return part;
         })}</p>
+        
+        {message.includes('https') && (
+            <Button asChild variant="destructive" className="w-full">
+                <a 
+                    href="https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="flex items-center gap-2"
+                >
+                    <ExternalLink className="h-4 w-4" />
+                    Abilita API Google Gemini ora
+                </a>
+            </Button>
+        )}
       </div>
     );
   };
@@ -95,7 +100,7 @@ export function MaintenanceAdvisorForm({ vehicle }: { vehicle: Vehicle }) {
     <div className="grid gap-8 md:grid-cols-2">
       <Card>
         <CardHeader>
-          <CardTitle className="font-headline">Parametri di Analisi AI</CardTitle>
+          <CardTitle className="font-headline">Parametri di Analisi IA</CardTitle>
           <CardDescription>
             Affina i dati del veicolo per ricevere un consiglio personalizzato.
           </CardDescription>

@@ -15,7 +15,6 @@ const MaintenancePlanInputSchema = z.object({
   make: z.string().describe('The make of the vehicle (e.g., Fiat).'),
   model: z.string().describe('The model of the vehicle (e.g., Panda).'),
 });
-export type MaintenancePlanInput = z.infer<typeof MaintenancePlanInputSchema>;
 
 const MaintenanceCheckSchema = z.object({
     description: z.string().describe("Description of the maintenance check."),
@@ -24,6 +23,8 @@ const MaintenanceCheckSchema = z.object({
 });
 
 const MaintenancePlanOutputSchema = z.array(MaintenanceCheckSchema);
+
+export type MaintenancePlanInput = z.infer<typeof MaintenancePlanInputSchema>;
 export type MaintenancePlanOutput = z.infer<typeof MaintenancePlanOutputSchema>;
 
 const prompt = ai.definePrompt({
@@ -79,11 +80,12 @@ export async function fetchMaintenancePlan(input: MaintenancePlanInput): Promise
                        errorMsg.includes('has not been used') ||
                        errorMsg.includes('disabled') ||
                        errorMsg.includes('non è attiva') ||
-                       errorMsg.includes('403');
+                       errorMsg.includes('403') ||
+                       errorMsg.includes('activation');
 
     if (isApiError) {
         return { error: "L'API Generative Language non è attiva nel tuo progetto. Abilitala su: https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com" };
     }
-    return { error: "Impossibile recuperare il piano di manutenzione AI. Assicurati che l'API Generative Language sia attiva nel tuo account Google Cloud." };
+    return { error: "Impossibile recuperare il piano di manutenzione IA. Assicurati che l'API Generative Language sia attiva nel tuo account Google Cloud." };
   }
 }
