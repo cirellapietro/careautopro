@@ -37,12 +37,13 @@ export async function fetchMaintenancePlan(input: MaintenancePlanInput): Promise
     const isApiError = errorMsg.includes('Generative Language API') || 
                        errorMsg.includes('has not been used') ||
                        errorMsg.includes('disabled') ||
+                       errorMsg.includes('non è attiva') ||
                        errorMsg.includes('403');
 
     if (isApiError) {
         return { error: "L'IA non può generare piani personalizzati perché l'API Generative Language non è attiva nel tuo progetto. Abilitala su: https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com" };
     }
-    return { error: "Impossibile recuperare il piano di manutenzione AI per questo modello." };
+    return { error: "Impossibile recuperare il piano di manutenzione AI. Assicurati che l'API Generative Language sia attiva nel tuo account Google Cloud." };
   }
 }
 

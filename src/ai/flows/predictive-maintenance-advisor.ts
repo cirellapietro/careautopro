@@ -11,14 +11,14 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const MaintenanceAdviceInputSchema = z.object({
+const MaintenanceAdviceSchema = z.object({
   vehicleType: z.string().describe('The type of the vehicle (e.g., gasoline, diesel, electric).'),
   kilometersDriven: z.number().describe('The total kilometers driven by the vehicle.'),
   lastMaintenanceDate: z.string().describe('The date of the last maintenance service (YYYY-MM-DD).'),
   maintenanceHistory: z.string().describe('A summary of the vehicle maintenance history.'),
   drivingStyle: z.string().describe('The user driving style (e.g., aggressive, moderate, conservative).'),
 });
-export type MaintenanceAdviceInput = z.infer<typeof MaintenanceAdviceInputSchema>;
+export type MaintenanceAdviceInput = z.infer<typeof MaintenanceAdviceSchema>;
 
 const MaintenanceAdviceOutputSchema = z.object({
   advice: z.string().describe('AI-generated advice on upcoming maintenance needs.'),
@@ -44,6 +44,7 @@ export async function getMaintenanceAdvice(input: MaintenanceAdviceInput): Promi
     const isApiDisabledError = errorMsg.includes('Generative Language API') || 
                                errorMsg.includes('has not been used') ||
                                errorMsg.includes('disabled') ||
+                               errorMsg.includes('non è attiva') ||
                                errorMsg.includes('403');
 
     if (isApiKeyError && !isApiDisabledError) {
@@ -54,7 +55,7 @@ export async function getMaintenanceAdvice(input: MaintenanceAdviceInput): Promi
         return { error: "L'API Generative Language non è attiva nel tuo progetto Google Cloud. Abilitala su: https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com" };
     }
     
-    return { error: "Si è verificato un problema durante la comunicazione con l'assistente AI. Riprova tra poco." };
+    return { error: "Si è verificato un problema durante la comunicazione con l'assistente AI. Per favore assicurati di aver abilitato l'API Generative Language nella tua console Google Cloud." };
   }
 }
 

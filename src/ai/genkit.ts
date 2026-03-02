@@ -26,7 +26,7 @@ try {
     return async (input: any) => {
       console.warn(`Il flusso IA '${config.name}' è stato chiamato, ma l'IA è disabilitata.`);
       throw new Error(
-        "Servizio IA non configurato. Verifica la validità della chiave API e l'abilitazione della Generative Language API nella Console Google Cloud."
+        "Servizio IA non configurato. Abilita la 'Generative Language API' nella Console Google Cloud: https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com"
       );
     };
   };

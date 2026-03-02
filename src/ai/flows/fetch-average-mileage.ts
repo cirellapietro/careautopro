@@ -32,12 +32,13 @@ export async function fetchAverageMileage(input: FetchAverageMileageInput): Prom
     const isApiError = errorMsg.includes('Generative Language API') || 
                        errorMsg.includes('has not been used') ||
                        errorMsg.includes('disabled') ||
+                       errorMsg.includes('non è attiva') ||
                        errorMsg.includes('403');
 
     if (isApiError) {
         return { error: "L'API Generative Language non è attiva nel tuo progetto Google Cloud. Abilitala su: https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com" };
     }
-    return { error: "Impossibile recuperare il chilometraggio medio tramite IA." };
+    return { error: "Impossibile recuperare il chilometraggio medio tramite IA. Verifica l'abilitazione dell'API Generative Language." };
   }
 }
 

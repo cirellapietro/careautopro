@@ -33,12 +33,13 @@ export async function reverseGeocode(input: ReverseGeocodeInput): Promise<Revers
     const isApiError = errorMsg.includes('Generative Language API') || 
                        errorMsg.includes('has not been used') ||
                        errorMsg.includes('disabled') ||
+                       errorMsg.includes('non è attiva') ||
                        errorMsg.includes('403');
 
     if (isApiError) {
         return { error: "L'IA non può localizzarti perché l'API Generative Language non è attiva nel tuo progetto. Abilitala su: https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com" };
     }
-    return { error: "Si è verificato un errore durante la geocodifica." };
+    return { error: "Si è verificato un errore durante la geocodifica. Assicurati che l'API Generative Language sia attiva." };
   }
 }
 
