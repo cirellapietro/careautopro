@@ -12,7 +12,7 @@ try {
   }
 
   ai = genkit({
-    plugins: [googleAI()],
+    plugins: [googleAI({ apiKey })],
     model: 'googleai/gemini-2.0-flash', // Utilizziamo il modello più recente e stabile
   });
 } catch (e: any) {
