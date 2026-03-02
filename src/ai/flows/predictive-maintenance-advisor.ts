@@ -31,17 +31,21 @@ export async function getMaintenanceAdvice(input: MaintenanceAdviceInput): Promi
   try {
     return await maintenanceAdviceFlow(input);
   } catch (e: any) {
-    console.error(`Genkit flow 'maintenanceAdviceFlow' failed: ${e.message}`);
+    const errorMsg = e.message || String(e);
+    console.error(`Genkit flow 'maintenanceAdviceFlow' failed: ${errorMsg}`);
     
-    const isApiError = e.message?.includes('Generative Language API') || 
-                       e.message?.includes('has not been used') ||
-                       e.message?.includes('disabled');
+    const isApiError = errorMsg.includes('Generative Language API') || 
+                       errorMsg.includes('has not been used') ||
+                       errorMsg.includes('disabled') ||
+                       errorMsg.includes('403') ||
+                       errorMsg.includes('API_KEY_INVALID') ||
+                       errorMsg.includes('not authorized');
 
     if (isApiError) {
-        return { error: "L'API per l'IA generativa (Gemini) non è attiva. Abilitala nella console Google Cloud per il progetto 705618426785 per ricevere consigli personalizzati." };
+        return { error: "L'API per l'IA generativa (Gemini) non è attiva o la chiave non è valida. Assicurati di aver abilitato la 'Generative Language API' nella console Google Cloud per il progetto associato." };
     }
     
-    return { error: "Si è verificato un errore durante l'analisi AI. Per favore riprova più tardi o verifica la connessione." };
+    return { error: "Si è verificato un problema durante l'analisi AI. Verifica la tua connessione internet o riprova tra qualche minuto." };
   }
 }
 
@@ -57,7 +61,7 @@ Last Maintenance Date: {{{lastMaintenanceDate}}}
 Maintenance History: {{{maintenanceHistory}}}
 Driving Style: {{{drivingStyle}}}
 
-Respond in a professional and helpful manner.
+Respond in Italian in a professional and helpful manner.
 Consider common issues for the vehicle type and driving style.
 
 Make sure to include suggestedInterventions based on vehicle data.
@@ -72,6 +76,7 @@ const maintenanceAdviceFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    return output!;
+    if (!output) throw new Error("L'IA non ha prodotto alcun risultato.");
+    return output;
   }
 );

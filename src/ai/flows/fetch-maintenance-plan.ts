@@ -31,11 +31,13 @@ export async function fetchMaintenancePlan(input: MaintenancePlanInput): Promise
   try {
     return await fetchMaintenancePlanFlow(input);
   } catch(e: any) {
-    console.error(`Genkit flow 'fetchMaintenancePlan' failed: ${e.message}`);
+    const errorMsg = e.message || String(e);
+    console.error(`Genkit flow 'fetchMaintenancePlan' failed: ${errorMsg}`);
     
-    const isApiError = e.message?.includes('Generative Language API') || 
-                       e.message?.includes('has not been used') ||
-                       e.message?.includes('disabled');
+    const isApiError = errorMsg.includes('Generative Language API') || 
+                       errorMsg.includes('has not been used') ||
+                       errorMsg.includes('disabled') ||
+                       errorMsg.includes('403');
 
     if (isApiError) {
         return { error: "L'IA non può generare piani personalizzati al momento perché l'API Generative Language non è attiva nel tuo account Google Cloud." };
