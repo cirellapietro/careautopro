@@ -19,7 +19,7 @@ import { Label } from "@/components/ui/label"
 import { Logo } from "@/components/logo"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { signInWithEmail, signInWithGoogle } from "@/firebase/auth/auth";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, ExternalLink } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 
@@ -51,6 +51,7 @@ const formSchema = z.object({
 export default function LoginForm() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [isConfigError, setIsConfigError] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -63,34 +64,39 @@ export default function LoginForm() {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setError(null);
+    setIsConfigError(false);
     try {
       await signInWithEmail(values.email, values.password);
       router.push("/dashboard");
     } catch (e: any) {
-      if (e.code === 'auth/operation-not-allowed') {
-        setError("Il metodo di accesso Email/Password deve essere abilitato nella Console Firebase (Authentication > Sign-in method).");
-      } else if (e.code === 'auth/invalid-credential' || e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password') {
+      const errorCode = e.code || "";
+      if (errorCode === 'auth/operation-not-allowed') {
+        setError("Il metodo di accesso Email/Password non è abilitato nella Console Firebase.");
+        setIsConfigError(true);
+      } else if (errorCode === 'auth/invalid-credential' || errorCode === 'auth/user-not-found' || errorCode === 'auth/wrong-password') {
         setError("Credenziali non valide. Controlla email e password.");
       } else {
         setError("Si è verificato un errore durante l'accesso. Riprova.");
-        console.error("Login error:", e.code, e.message);
+        console.error("Login error:", e);
       }
     }
   };
 
   const handleGoogleSignIn = async () => {
     setError(null);
+    setIsConfigError(false);
     setIsGoogleLoading(true);
     try {
       await signInWithGoogle();
       router.push("/dashboard");
     } catch (e: any) {
-      if (e.code === 'auth/operation-not-allowed') {
+      const errorCode = e.code || "";
+      if (errorCode === 'auth/operation-not-allowed') {
         setError("L'accesso con Google deve essere abilitato nella Console Firebase (Authentication > Sign-in method).");
+        setIsConfigError(true);
       } else {
         setError("Impossibile accedere con Google. Riprova.");
-        // Logga solo se non è un errore di configurazione noto per evitare overlay rumorosi in dev
-        console.error("Google login error:", e.code, e.message);
+        console.error("Google login error:", e);
       }
     } finally {
       setIsGoogleLoading(false);
@@ -112,10 +118,19 @@ export default function LoginForm() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
               {error && (
-                <Alert variant="destructive">
+                <Alert variant="destructive" className="mb-2">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Attenzione</AlertTitle>
-                  <AlertDescription className="text-xs">{error}</AlertDescription>
+                  <AlertTitle>{isConfigError ? 'Configurazione Richiesta' : 'Attenzione'}</AlertTitle>
+                  <AlertDescription className="text-xs">
+                    {error}
+                    {isConfigError && (
+                        <Button asChild variant="link" className="h-auto p-0 text-xs text-destructive-foreground underline mt-2 block">
+                            <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1">
+                                Vai alla Console Firebase <ExternalLink className="h-3 w-3" />
+                            </a>
+                        </Button>
+                    )}
+                  </AlertDescription>
                 </Alert>
               )}
                <FormField

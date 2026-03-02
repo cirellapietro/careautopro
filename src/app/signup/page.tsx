@@ -19,7 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/logo";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { signUpWithEmail, signInWithGoogle } from "@/firebase/auth/auth";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, ExternalLink } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 
@@ -51,6 +51,7 @@ const formSchema = z.object({
 export default function SignupForm() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [isConfigError, setIsConfigError] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -64,33 +65,39 @@ export default function SignupForm() {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setError(null);
+    setIsConfigError(false);
     try {
       await signUpWithEmail(values.email, values.password, values.fullName);
       router.push("/dashboard");
     } catch (e: any) {
-      if (e.code === 'auth/operation-not-allowed') {
-        setError("La registrazione tramite Email/Password deve essere abilitata nella Console Firebase (Authentication > Sign-in method).");
-      } else if (e.code === 'auth/email-already-in-use') {
+      const errorCode = e.code || "";
+      if (errorCode === 'auth/operation-not-allowed') {
+        setError("La registrazione tramite Email/Password non è abilitata nella Console Firebase.");
+        setIsConfigError(true);
+      } else if (errorCode === 'auth/email-already-in-use') {
         setError("Questa email è già associata a un account. Prova ad accedere.");
       } else {
         setError("Si è verificato un errore durante la registrazione. Riprova.");
-        console.error("Signup error:", e.code, e.message);
+        console.error("Signup error:", e);
       }
     }
   };
   
   const handleGoogleSignIn = async () => {
     setError(null);
+    setIsConfigError(false);
     setIsGoogleLoading(true);
     try {
       await signInWithGoogle();
       router.push("/dashboard");
     } catch (e: any) {
-      if (e.code === 'auth/operation-not-allowed') {
+      const errorCode = e.code || "";
+      if (errorCode === 'auth/operation-not-allowed') {
         setError("L'accesso con Google deve essere abilitato nella Console Firebase (Authentication > Sign-in method).");
+        setIsConfigError(true);
       } else {
         setError("Impossibile registrarsi con Google. Riprova.");
-        console.error("Google signup error:", e.code, e.message);
+        console.error("Google signup error:", e);
       }
     } finally {
       setIsGoogleLoading(false);
@@ -111,10 +118,19 @@ export default function SignupForm() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
                {error && (
-                <Alert variant="destructive">
+                <Alert variant="destructive" className="mb-2">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Attenzione</AlertTitle>
-                  <AlertDescription className="text-xs">{error}</AlertDescription>
+                  <AlertTitle>{isConfigError ? 'Configurazione Richiesta' : 'Attenzione'}</AlertTitle>
+                  <AlertDescription className="text-xs">
+                    {error}
+                    {isConfigError && (
+                        <Button asChild variant="link" className="h-auto p-0 text-xs text-destructive-foreground underline mt-2 block">
+                            <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1">
+                                Vai alla Console Firebase <ExternalLink className="h-3 w-3" />
+                            </a>
+                        </Button>
+                    )}
+                  </AlertDescription>
                 </Alert>
               )}
               <FormField
@@ -178,7 +194,7 @@ export default function SignupForm() {
                Google
             </Button>
             <Button variant="outline" className="w-full gap-2" disabled>
-              <FacebookIcon className="h-5 w-5" /> Facebook
+              <ExternalLink className="h-5 w-5" /> Facebook
             </Button>
           </div>
           <div className="mt-4 text-center text-sm">
