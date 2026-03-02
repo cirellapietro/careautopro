@@ -47,11 +47,11 @@ export async function getMaintenanceAdvice(input: MaintenanceAdviceInput): Promi
                                errorMsg.includes('403');
 
     if (isApiKeyError && !isApiDisabledError) {
-        return { error: "La chiave API per Gemini non è valida o è scaduta. Controlla la variabile GOOGLE_GENAI_API_KEY nel file .env." };
+        return { error: "La chiave API per Gemini non è valida o è scaduta. Controlla la configurazione nel file .env." };
     }
     
     if (isApiDisabledError) {
-        return { error: "L'API Generative Language non è attiva nel tuo progetto Google Cloud. Abilitala nella console per ricevere consigli dall'IA." };
+        return { error: "L'API Generative Language non è attiva nel tuo progetto Google Cloud. Abilitala su: https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com" };
     }
     
     return { error: "Si è verificato un problema durante la comunicazione con l'assistente AI. Riprova tra poco." };

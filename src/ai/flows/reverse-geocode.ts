@@ -27,14 +27,16 @@ export async function reverseGeocode(input: ReverseGeocodeInput): Promise<Revers
   try {
     return await reverseGeocodeFlow(input);
   } catch(e: any) {
-    console.error(`Genkit flow 'reverseGeocode' failed: ${e.message}`);
+    const errorMsg = e.message || String(e);
+    console.error(`Genkit flow 'reverseGeocode' failed: ${errorMsg}`);
     
-    const isApiError = e.message?.includes('Generative Language API') || 
-                       e.message?.includes('has not been used') ||
-                       e.message?.includes('disabled');
+    const isApiError = errorMsg.includes('Generative Language API') || 
+                       errorMsg.includes('has not been used') ||
+                       errorMsg.includes('disabled') ||
+                       errorMsg.includes('403');
 
     if (isApiError) {
-        return { error: "L'API per l'IA generativa non è attiva. Abilitala nella console Google Cloud per abilitare la localizzazione intelligente." };
+        return { error: "L'IA non può localizzarti perché l'API Generative Language non è attiva nel tuo progetto. Abilitala su: https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com" };
     }
     return { error: "Si è verificato un errore durante la geocodifica." };
   }
