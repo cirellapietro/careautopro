@@ -74,8 +74,8 @@ export default function SignupForm() {
         setError("Questa email è già associata a un account. Prova ad accedere.");
       } else {
         setError("Si è verificato un errore durante la registrazione. Riprova.");
+        console.error("Signup error:", e.code, e.message);
       }
-      console.error("Signup error:", e.code, e.message);
     }
   };
   
@@ -90,8 +90,8 @@ export default function SignupForm() {
         setError("L'accesso con Google deve essere abilitato nella Console Firebase (Authentication > Sign-in method).");
       } else {
         setError("Impossibile registrarsi con Google. Riprova.");
+        console.error("Google signup error:", e.code, e.message);
       }
-      console.error("Google signup error:", e.code, e.message);
     } finally {
       setIsGoogleLoading(false);
     }

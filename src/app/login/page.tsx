@@ -73,8 +73,8 @@ export default function LoginForm() {
         setError("Credenziali non valide. Controlla email e password.");
       } else {
         setError("Si è verificato un errore durante l'accesso. Riprova.");
+        console.error("Login error:", e.code, e.message);
       }
-      console.error("Login error:", e.code, e.message);
     }
   };
 
@@ -89,8 +89,9 @@ export default function LoginForm() {
         setError("L'accesso con Google deve essere abilitato nella Console Firebase (Authentication > Sign-in method).");
       } else {
         setError("Impossibile accedere con Google. Riprova.");
+        // Logga solo se non è un errore di configurazione noto per evitare overlay rumorosi in dev
+        console.error("Google login error:", e.code, e.message);
       }
-      console.error("Google login error:", e.code, e.message);
     } finally {
       setIsGoogleLoading(false);
     }
