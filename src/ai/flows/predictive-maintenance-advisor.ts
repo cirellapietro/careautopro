@@ -11,14 +11,14 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const MaintenanceAdviceSchema = z.object({
+const MaintenanceAdviceInputSchema = z.object({
   vehicleType: z.string().describe('The type of the vehicle (e.g., gasoline, diesel, electric).'),
   kilometersDriven: z.number().describe('The total kilometers driven by the vehicle.'),
   lastMaintenanceDate: z.string().describe('The date of the last maintenance service (YYYY-MM-DD).'),
   maintenanceHistory: z.string().describe('A summary of the vehicle maintenance history.'),
   drivingStyle: z.string().describe('The user driving style (e.g., aggressive, moderate, conservative).'),
 });
-export type MaintenanceAdviceInput = z.infer<typeof MaintenanceAdviceSchema>;
+export type MaintenanceAdviceInput = z.infer<typeof MaintenanceAdviceInputSchema>;
 
 const MaintenanceAdviceOutputSchema = z.object({
   advice: z.string().describe('AI-generated advice on upcoming maintenance needs.'),
