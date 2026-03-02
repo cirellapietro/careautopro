@@ -110,7 +110,7 @@ export default function LoginForm() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
               {error && (
                 <Alert variant="destructive">
-                  <AlertTitle>Errore di accesso</AlertTitle>
+                  <AlertTitle>Errore di autenticazione</AlertTitle>
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
