@@ -1,13 +1,13 @@
 'use client';
 import { useUser } from "@/firebase/auth/use-user";
 import { useFirebase, errorEmitter, FirestorePermissionError } from "@/firebase";
-import { collection, doc, getDocs, updateDoc, query, where } from 'firebase/firestore';
+import { collection, doc, getDocs, updateDoc, query } from 'firebase/firestore';
 import type { VehicleType, MaintenanceCheck } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2, PlusCircle, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -43,18 +43,23 @@ export default function AllMaintenanceChecksPage() {
     const fetchAllData = async () => {
       setLoading(true);
       try {
-        const vtQuery = query(collection(firestore, 'vehicleTypes'), where('dataoraelimina', '==', null));
-        const vtSnap = await getDocs(vtQuery);
-        const fetchedVehicleTypes = vtSnap.docs.map(doc => doc.data() as VehicleType);
+        // Recuperiamo tutti i tipi veicolo senza filtri iniziali
+        const vtSnap = await getDocs(collection(firestore, 'vehicleTypes'));
+        const fetchedVehicleTypes = vtSnap.docs
+            .map(doc => ({ id: doc.id, ...doc.data() } as VehicleType))
+            .filter(vt => !vt.dataoraelimina); // Filtraggio client-side
+        
         setVehicleTypes(fetchedVehicleTypes);
 
         const checksPromises = fetchedVehicleTypes.map(async (vt) => {
-          const checksQuery = query(collection(firestore, `vehicleTypes/${vt.id}/maintenanceChecks`), where('dataoraelimina', '==', null));
-          const checksSnap = await getDocs(checksQuery);
-          return checksSnap.docs.map(doc => ({
-            ...(doc.data() as MaintenanceCheck),
-            vehicleTypeName: vt.name
-          }));
+          const checksSnap = await getDocs(collection(firestore, `vehicleTypes/${vt.id}/maintenanceChecks`));
+          return checksSnap.docs
+            .map(doc => ({
+                id: doc.id,
+                ...(doc.data() as MaintenanceCheck),
+                vehicleTypeName: vt.name
+            }))
+            .filter(c => !c.dataoraelimina); // Filtraggio client-side
         });
 
         const checksByVehicleType = await Promise.all(checksPromises);
@@ -144,16 +149,18 @@ export default function AllMaintenanceChecksPage() {
                     <TableCell>{check.intervalMileage ? `${check.intervalMileage.toLocaleString('it-IT')} km` : 'N/A'}</TableCell>
                     <TableCell>{check.intervalTime ? `${check.intervalTime} mesi` : 'N/A'}</TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" onClick={() => router.push(`/dashboard/admin/vehicle-types/maintenance-checks/view?vehicleTypeId=${check.vehicleTypeId}&checkId=${check.id}`)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => setCheckToDelete(check)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex justify-end gap-2">
+                        <Button variant="ghost" size="icon" onClick={() => router.push(`/dashboard/admin/vehicle-types/maintenance-checks/view?vehicleTypeId=${check.vehicleTypeId}&checkId=${check.id}`)}>
+                            <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => setCheckToDelete(check)}>
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 )) : (
-                    <TableRow><TableCell colSpan={5} className="text-center">Nessun controllo trovato.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={5} className="text-center py-8">Nessun controllo trovato.</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>

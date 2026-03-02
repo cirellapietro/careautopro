@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 
 import { useUser } from "@/firebase/auth/use-user";
 import { useFirebase, useCollection, errorEmitter, FirestorePermissionError } from "@/firebase";
-import { collection, doc, updateDoc, query, where } from 'firebase/firestore';
+import { collection, doc, updateDoc } from 'firebase/firestore';
 import type { Role } from '@/lib/types';
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
@@ -23,10 +23,15 @@ export default function AdminRolesPage() {
 
   const rolesQuery = useMemo(() => {
     if (!firestore || currentUser?.role !== 'Amministratore') return null;
-    return query(collection(firestore, 'roles'), where('dataoraelimina', '==', null));
+    return collection(firestore, 'roles');
   }, [firestore, currentUser]);
 
-  const { data: roles, isLoading: rolesLoading } = useCollection<Role>(rolesQuery);
+  const { data: rawRoles, isLoading: rolesLoading } = useCollection<Role>(rolesQuery);
+
+  const roles = useMemo(() => {
+    if (!rawRoles) return [];
+    return rawRoles.filter(r => !r.dataoraelimina);
+  }, [rawRoles]);
 
   useEffect(() => {
     if (!userLoading && (!currentUser || currentUser.role !== 'Amministratore')) {
@@ -73,12 +78,14 @@ export default function AdminRolesPage() {
             <TableRow key={role.id} onClick={() => router.push(`/dashboard/admin/roles/view?id=${role.id}`)} className="cursor-pointer">
               <TableCell className="font-medium p-4">{role.name}</TableCell>
               <TableCell className="text-right p-4">
-                <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); router.push(`/dashboard/admin/roles/view?id=${role.id}`)}}>
-                    <Pencil className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); setRoleToDelete(role); }}>
-                    <Trash2 className="h-4 w-4" />
-                </Button>
+                <div className="flex justify-end gap-2">
+                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); router.push(`/dashboard/admin/roles/view?id=${role.id}`)}}>
+                        <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); setRoleToDelete(role); }}>
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
+                </div>
               </TableCell>
             </TableRow>
           ))}</TableBody></Table>

@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 
 import { useUser } from "@/firebase/auth/use-user";
 import { useFirebase, useCollection, errorEmitter, FirestorePermissionError } from "@/firebase";
-import { collection, doc, updateDoc, query, where } from 'firebase/firestore';
+import { collection, doc, updateDoc, query } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -24,13 +24,20 @@ export default function AdminUsersPage() {
   
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
+  // Query senza filtri per garantire di vedere tutti i record esistenti
   const usersQuery = useMemo(() => {
     if (!firestore || currentUser?.role !== 'Amministratore') return null;
-    // Mostriamo solo gli utenti che non sono stati eliminati logicamente
-    return query(collection(firestore, 'users'), where('dataoraelimina', '==', null));
+    return collection(firestore, 'users');
   }, [firestore, currentUser]);
 
-  const { data: users, isLoading: usersLoading } = useCollection<User>(usersQuery);
+  const { data: rawUsers, isLoading: usersLoading } = useCollection<User>(usersQuery);
+
+  // Filtriamo i risultati lato client per gestire i "soft deletes" in modo robusto
+  // Mostriamo solo gli utenti che non hanno il campo dataoraelimina valorizzato
+  const users = useMemo(() => {
+    if (!rawUsers) return [];
+    return rawUsers.filter(u => !u.dataoraelimina);
+  }, [rawUsers]);
 
   useEffect(() => {
     if (!userLoading && (!currentUser || currentUser.role !== 'Amministratore')) {
@@ -41,14 +48,16 @@ export default function AdminUsersPage() {
   const handleDelete = () => {
     if (!userToDelete || !firestore) return;
     
-    // Impediamo all'admin di eliminare se stesso
-    if (userToDelete.uid === currentUser?.uid) {
+    // Usiamo u.id (aggiunto da useCollection) o u.uid
+    const userId = userToDelete.id || userToDelete.uid;
+
+    if (userId === currentUser?.uid) {
         toast({ variant: 'destructive', title: "Operazione non consentita", description: "Non puoi eliminare il tuo stesso account amministratore." });
         setUserToDelete(null);
         return;
     }
 
-    const docRef = doc(firestore, 'users', userToDelete.uid);
+    const docRef = doc(firestore, 'users', userId);
     const dataToUpdate = { dataoraelimina: new Date().toISOString() };
 
     updateDoc(docRef, dataToUpdate)
@@ -103,8 +112,11 @@ export default function AdminUsersPage() {
                 <TableBody>
                     {users && users.length > 0 ? users.map(u => {
                         const initial = u.displayName ? u.displayName.charAt(0).toUpperCase() : (u.email ? u.email.charAt(0).toUpperCase() : '?');
+                        // Document ID è la chiave primaria
+                        const userId = u.id || u.uid;
+                        
                         return (
-                            <TableRow key={u.id}>
+                            <TableRow key={userId}>
                                 <TableCell>
                                     <Avatar className="h-8 w-8">
                                         <AvatarImage src={u.photoURL || ''} />
@@ -126,7 +138,7 @@ export default function AdminUsersPage() {
                                 </TableCell>
                                 <TableCell className="text-right">
                                     <div className="flex justify-end gap-2">
-                                        <Button variant="ghost" size="icon" onClick={() => router.push(`/dashboard/admin/users/view?id=${u.uid}`)}>
+                                        <Button variant="ghost" size="icon" onClick={() => router.push(`/dashboard/admin/users/view?id=${userId}`)}>
                                             <Pencil className="h-4 w-4" />
                                         </Button>
                                         <Button 
@@ -134,7 +146,7 @@ export default function AdminUsersPage() {
                                             size="icon" 
                                             className="text-destructive hover:text-destructive" 
                                             onClick={() => setUserToDelete(u)}
-                                            disabled={u.uid === currentUser?.uid}
+                                            disabled={userId === currentUser?.uid}
                                         >
                                             <Trash2 className="h-4 w-4" />
                                         </Button>

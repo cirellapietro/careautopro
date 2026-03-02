@@ -1,7 +1,7 @@
 'use client';
 import { useUser } from "@/firebase/auth/use-user";
 import { useFirebase, useCollection, errorEmitter, FirestorePermissionError } from "@/firebase";
-import { collection, doc, updateDoc, query, where } from 'firebase/firestore';
+import { collection, doc, updateDoc } from 'firebase/firestore';
 import type { VehicleType } from '@/lib/types';
 import {
   Card,
@@ -45,10 +45,15 @@ export default function AdminVehicleTypesPage() {
 
   const vehicleTypesQuery = useMemo(() => {
     if (!firestore || currentUser?.role !== 'Amministratore') return null;
-    return query(collection(firestore, 'vehicleTypes'), where('dataoraelimina', '==', null));
+    return collection(firestore, 'vehicleTypes');
   }, [firestore, currentUser]);
 
-  const { data: vehicleTypes, isLoading: vehicleTypesLoading } = useCollection<VehicleType>(vehicleTypesQuery);
+  const { data: rawVehicleTypes, isLoading: vehicleTypesLoading } = useCollection<VehicleType>(vehicleTypesQuery);
+
+  const vehicleTypes = useMemo(() => {
+    if (!rawVehicleTypes) return [];
+    return rawVehicleTypes.filter(vt => !vt.dataoraelimina);
+  }, [rawVehicleTypes]);
 
   useEffect(() => {
     if (!userLoading && (!currentUser || currentUser.role !== 'Amministratore')) {
@@ -121,24 +126,32 @@ export default function AdminVehicleTypesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {vehicleTypes && vehicleTypes.map(vt => (
+                  {vehicleTypes && vehicleTypes.length > 0 ? vehicleTypes.map(vt => (
                     <TableRow 
                       key={vt.id}
-                      className={cn("cursor-pointer", vt.dataoraelimina && 'text-muted-foreground opacity-50')}
-                      onClick={() => !vt.dataoraelimina && router.push(`/dashboard/admin/vehicle-types/view?id=${vt.id}`)}
+                      className="cursor-pointer"
+                      onClick={() => router.push(`/dashboard/admin/vehicle-types/view?id=${vt.id}`)}
                     >
                       <TableCell className="font-medium">{vt.name}</TableCell>
                       <TableCell>{vt.averageAnnualMileage.toLocaleString('it-IT')} km</TableCell>
                       <TableCell className="text-right">
-                          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); router.push(`/dashboard/admin/vehicle-types/view?id=${vt.id}`)}} disabled={!!vt.dataoraelimina}>
-                              <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); setVehicleTypeToDelete(vt); }} disabled={!!vt.dataoraelimina}>
-                              <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); router.push(`/dashboard/admin/vehicle-types/view?id=${vt.id}`)}}>
+                                <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); setVehicleTypeToDelete(vt); }}>
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )) : (
+                    <TableRow>
+                        <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
+                            Nessun tipo veicolo trovato.
+                        </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             )}
