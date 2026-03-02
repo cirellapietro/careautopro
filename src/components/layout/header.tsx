@@ -86,9 +86,10 @@ function TrackingIndicator() {
     if (!isTracking || !trackedVehicle) return null;
 
     return (
-        <div className="hidden items-center gap-2 rounded-full bg-destructive px-3 py-1 text-xs font-medium text-destructive-foreground md:flex">
+        <div className="flex items-center gap-2 rounded-full bg-destructive px-3 py-1 text-[10px] font-bold text-destructive-foreground">
             <div className="h-2 w-2 rounded-full bg-white animate-pulse" />
-            <span>Tracciando: {trackedVehicle.name}</span>
+            <span className="hidden sm:inline">GPS ATTIVO:</span>
+            <span>{trackedVehicle.name}</span>
         </div>
     );
 }
@@ -130,7 +131,7 @@ export function Header() {
             <Link href="/dashboard">
                 <Logo />
             </Link>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
                 <TrackingIndicator />
                 <NotificationBell />
                 <ThemeToggleButton />

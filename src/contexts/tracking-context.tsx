@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useMemo, useRef } from 'react';
@@ -57,12 +58,11 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
     }, [user, firestore]);
     const { data: vehicles } = useCollection<Vehicle>(vehiclesQuery);
     
-    // 1. CARICAMENTO INIZIALE: Ripristina lo stato dal localStorage e inizializza i riferimenti (Ref)
+    // 1. CARICAMENTO INIZIALE: Ripristina lo stato dal localStorage
     useEffect(() => {
         if (user?.uid) {
             const userId = user.uid;
             
-            // Ripristina ID veicolo
             const savedId = localStorage.getItem(`trackedVehicleId_${userId}`);
             if (savedId) {
                 try {
@@ -72,24 +72,19 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
                 }
             }
 
-            // Ripristina flag tracciamento
             const isTrackingSaved = localStorage.getItem(`isTracking_${userId}`) === 'true';
-            
-            // Ripristina distanza e ora inizio
             const distanceSaved = localStorage.getItem(`sessionDistance_${userId}`);
             const syncedSaved = localStorage.getItem(`syncedDistance_${userId}`);
             const startSaved = localStorage.getItem(`startTime_${userId}`);
 
             if (distanceSaved) {
-                const d = parseFloat(distanceSaved);
-                distanceRef.current = d;
-                setSessionDistance(d);
+                distanceRef.current = parseFloat(distanceSaved);
+                setSessionDistance(distanceRef.current);
             }
 
             if (syncedSaved) {
-                const sd = parseFloat(syncedSaved);
-                syncedDistanceRef.current = sd;
-                setSyncedDistance(sd);
+                syncedDistanceRef.current = parseFloat(syncedSaved);
+                setSyncedDistance(syncedDistanceRef.current);
             }
 
             if (startSaved) {
@@ -107,8 +102,10 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
         if (user?.uid && vehicles && permissionStatus === 'granted' && !isTracking) {
             const vehicleToTrack = vehicles.find(v => v.trackingGPS === true);
             if (vehicleToTrack) {
+                console.log("Rilevato tracciamento attivo nel database per:", vehicleToTrack.name);
                 _setTrackedVehicleId(vehicleToTrack.id);
                 localStorage.setItem(`trackedVehicleId_${user.uid}`, JSON.stringify(vehicleToTrack.id));
+                localStorage.setItem(`isTracking_${user.uid}`, 'true');
                 setIsTracking(true);
             }
         }
@@ -131,7 +128,6 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
     // 3. MOTORE DI CALCOLO: Gestisce Geolocation e Cronometro quando isTracking è TRUE
     useEffect(() => {
         if (!isTracking || !trackedVehicleId || permissionStatus !== 'granted') {
-            // Pulizia se il tracciamento si ferma
             if (watchIdRef.current !== null) {
                 navigator.geolocation.clearWatch(watchIdRef.current);
                 watchIdRef.current = null;
@@ -143,14 +139,9 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
             return;
         }
 
-        // Inizializza ora inizio se siamo in un nuovo tracciamento (non ripristinato)
+        // Inizializzazione tempi per ripresa o avvio
         if (!startTimeRef.current) {
             startTimeRef.current = new Date();
-            distanceRef.current = 0;
-            syncedDistanceRef.current = 0;
-            setSessionDistance(0);
-            setSessionDuration(0);
-            setSyncedDistance(0);
             if (user?.uid) {
                 localStorage.setItem(`startTime_${user.uid}`, startTimeRef.current.toISOString());
                 localStorage.setItem(`isTracking_${user.uid}`, 'true');
@@ -176,7 +167,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
                         position.coords.longitude
                     );
                     
-                    // Filtro per rumore GPS (salto > 2km in pochi secondi è impossibile)
+                    // Filtro rumore GPS
                     if (newDistance < 2) { 
                         distanceRef.current += newDistance;
                         setSessionDistance(distanceRef.current);
@@ -184,7 +175,6 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
                             localStorage.setItem(`sessionDistance_${user.uid}`, distanceRef.current.toString());
                         }
 
-                        // Sincronizzazione automatica nel DB ogni 0.5 km
                         const unsyncedDistance = distanceRef.current - syncedDistanceRef.current;
                         if (unsyncedDistance >= 0.5) {
                             syncMileageToDb(trackedVehicleId, unsyncedDistance);
@@ -196,11 +186,8 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
                 lastPositionRef.current = position.coords;
             },
             (error) => {
-                console.error("GPS Watch Error:", error);
-                if (error.code === 1) { // Permission Denied
-                    setPermissionStatus('denied');
-                }
-                toast({ variant: 'destructive', title: 'Errore GPS', description: 'Segnale GPS perso o permessi negati.' });
+                console.error("GPS Error:", error);
+                if (error.code === 1) setPermissionStatus('denied');
             },
             { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
@@ -248,18 +235,14 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
         }
 
         if (permissionStatus !== 'granted') {
-            toast({ variant: 'destructive', title: 'Permessi GPS', description: 'Abilita i permessi di geolocalizzazione nel browser.' });
+            toast({ variant: 'destructive', title: 'Permessi GPS', description: 'Abilita i permessi GPS per tracciare i chilometri.' });
             return;
         }
 
-        // Imposta flag nel DB
         const vehicleRef = doc(firestore, `users/${user.uid}/vehicles`, idToTrack);
         updateDoc(vehicleRef, { trackingGPS: true });
 
-        if (vehicleIdOverride) {
-            setTrackedVehicleId(vehicleIdOverride);
-        }
-        
+        setTrackedVehicleId(idToTrack);
         setIsTracking(true);
     }, [permissionStatus, trackedVehicleId, user, firestore, setTrackedVehicleId, toast]);
 
@@ -295,9 +278,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
                 });
                 
                 if (finalUnsyncedDistance > 0) {
-                    batch.update(vehicleRef, {
-                        currentMileage: increment(finalUnsyncedDistance)
-                    });
+                    batch.update(vehicleRef, { currentMileage: increment(finalUnsyncedDistance) });
                 }
 
                 const todayStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
@@ -320,13 +301,12 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
                     });
                 }
                 await batch.commit();
-                toast({ title: 'Viaggio completato!', description: 'Chilometri e statistiche salvati correttamente.' });
+                toast({ title: 'Viaggio completato!', description: 'Dati salvati correttamente.' });
             } else {
                 await updateDoc(vehicleRef, { trackingGPS: false });
             }
         } catch (e: any) {
             console.error("Save Error:", e);
-            toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile salvare i dati della sessione.' });
         } finally {
             setIsTracking(false);
             resetTrackingState();
