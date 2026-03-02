@@ -19,7 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/logo";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { signUpWithEmail, signInWithGoogle } from "@/firebase/auth/auth";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 
@@ -69,13 +69,13 @@ export default function SignupForm() {
       router.push("/dashboard");
     } catch (e: any) {
       if (e.code === 'auth/operation-not-allowed') {
-        setError("La registrazione tramite Email/Password non è abilitata nella Console Firebase. Abilitala sotto Authentication > Sign-in method.");
+        setError("La registrazione tramite Email/Password deve essere abilitata nella Console Firebase (Authentication > Sign-in method).");
       } else if (e.code === 'auth/email-already-in-use') {
-        setError("Questa email è già in uso. Prova ad accedere.");
+        setError("Questa email è già associata a un account. Prova ad accedere.");
       } else {
         setError("Si è verificato un errore durante la registrazione. Riprova.");
       }
-      console.error(e);
+      console.error("Signup error:", e.code, e.message);
     }
   };
   
@@ -87,11 +87,11 @@ export default function SignupForm() {
       router.push("/dashboard");
     } catch (e: any) {
       if (e.code === 'auth/operation-not-allowed') {
-        setError("L'accesso con Google non è abilitato nella Console Firebase. Abilitala sotto Authentication > Sign-in method.");
+        setError("L'accesso con Google deve essere abilitato nella Console Firebase (Authentication > Sign-in method).");
       } else {
         setError("Impossibile registrarsi con Google. Riprova.");
       }
-      console.error(e);
+      console.error("Google signup error:", e.code, e.message);
     } finally {
       setIsGoogleLoading(false);
     }
@@ -112,8 +112,9 @@ export default function SignupForm() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
                {error && (
                 <Alert variant="destructive">
-                  <AlertTitle>Errore di registrazione</AlertTitle>
-                  <AlertDescription>{error}</AlertDescription>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Attenzione</AlertTitle>
+                  <AlertDescription className="text-xs">{error}</AlertDescription>
                 </Alert>
               )}
               <FormField

@@ -19,7 +19,7 @@ import { Label } from "@/components/ui/label"
 import { Logo } from "@/components/logo"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { signInWithEmail, signInWithGoogle } from "@/firebase/auth/auth";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 
@@ -68,11 +68,13 @@ export default function LoginForm() {
       router.push("/dashboard");
     } catch (e: any) {
       if (e.code === 'auth/operation-not-allowed') {
-        setError("Il metodo di accesso Email/Password non è abilitato nella Console Firebase. Abilitalo sotto Authentication > Sign-in method.");
+        setError("Il metodo di accesso Email/Password deve essere abilitato nella Console Firebase (Authentication > Sign-in method).");
+      } else if (e.code === 'auth/invalid-credential' || e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password') {
+        setError("Credenziali non valide. Controlla email e password.");
       } else {
-        setError("Credenziali non valide. Riprova.");
+        setError("Si è verificato un errore durante l'accesso. Riprova.");
       }
-      console.error(e);
+      console.error("Login error:", e.code, e.message);
     }
   };
 
@@ -84,11 +86,11 @@ export default function LoginForm() {
       router.push("/dashboard");
     } catch (e: any) {
       if (e.code === 'auth/operation-not-allowed') {
-        setError("L'accesso con Google non è abilitato nella Console Firebase. Abilitalo sotto Authentication > Sign-in method.");
+        setError("L'accesso con Google deve essere abilitato nella Console Firebase (Authentication > Sign-in method).");
       } else {
         setError("Impossibile accedere con Google. Riprova.");
       }
-      console.error(e);
+      console.error("Google login error:", e.code, e.message);
     } finally {
       setIsGoogleLoading(false);
     }
@@ -110,8 +112,9 @@ export default function LoginForm() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
               {error && (
                 <Alert variant="destructive">
-                  <AlertTitle>Errore di autenticazione</AlertTitle>
-                  <AlertDescription>{error}</AlertDescription>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Attenzione</AlertTitle>
+                  <AlertDescription className="text-xs">{error}</AlertDescription>
                 </Alert>
               )}
                <FormField
