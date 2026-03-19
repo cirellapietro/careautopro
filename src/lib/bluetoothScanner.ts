@@ -1,35 +1,24 @@
-import { BleClient } from '@capacitor-community/bluetooth-le';
+import { db } from './firebaseConfig';
+import { doc, getDoc } from 'firebase/firestore';
 
 /**
- * Scansiona e abilita l'hotspot solo se l'utente lo ha previsto per quel veicolo
+ * Controlla se l'utente ha dato il permesso di attivare l'hotspot 
+ * per questo specifico UUID veicolo.
  */
-export const scanAndConnectVehicle = async (targetBtName: string, shouldEnableHotspot: boolean) => {
-  try {
-    await BleClient.initialize();
-    
-    // Avvia scansione per 5 secondi
-    await BleClient.requestLEScan({}, (result) => {
-      if (result.localName === targetBtName) {
-        console.log(`Veicolo trovato: ${targetBtName}`);
-        
-        // IL CHECK CHE HAI RICHIESTO:
-        if (shouldEnableHotspot) {
-          attivaHotspotNativo();
-        }
-      }
-    });
+export const gestisciConnessioneVeicolo = async (ownerUUID: string, vehicleUUID: string) => {
+  const vehicleRef = doc(db, 'users', ownerUUID, 'vehicles', vehicleUUID);
+  const snap = await getDoc(vehicleRef);
 
-    setTimeout(async () => {
-      await BleClient.stopLEScan();
-    }, 5000);
-    
-  } catch (error) {
-    console.error("Errore Bluetooth:", error);
+  if (snap.exists()) {
+    const { autoHotspotEnabled, pairedBluetoothName } = snap.data();
+
+    // Procedi solo se l'utente ha attivato il check nel setup
+    if (autoHotspotEnabled) {
+      console.log(`Verifica Bluetooth per: ${pairedBluetoothName}`);
+      // Qui parte la scansione BLE...
+      // Se trovato -> Attiva Hotspot tramite bridge nativo
+    } else {
+      console.log("Hotspot disabilitato dalle impostazioni utente per questo veicolo.");
+    }
   }
-};
-
-const attivaHotspotNativo = () => {
-  // Qui chiamiamo il plugin @capacitor-community/http o un bridge personalizzato
-  console.log("Comando inviato: Abilitazione Hotspot Smartphone in corso...");
-  // In produzione: HotspotPlugin.enable();
 };
