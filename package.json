@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@capacitor-community/http": "^1.4.1",
     "@capacitor/android": "^8.1.0",
     "@capacitor/cli": "^7.5.0",
     "@capacitor/core": "^8.1.0",
