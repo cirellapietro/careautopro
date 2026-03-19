@@ -1,49 +1,36 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useUser } from '@/firebase/auth/use-user';
-import { scanAndConnectVehicle } from '@/lib/bluetoothScanner';
+import { SmartMileageSync } from '@/components/SmartMileageSync';
 import { AdsBanner } from '@/components/AdsBanner';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '@/firebase/auth/firebaseConfig';
 
 export default function DashboardPage() {
   const { user } = useUser();
+  // Qui assumiamo che tu abbia già la logica per recuperare il veicolo attivo
+  const vehicle = { name: "Tesla Model 3", currentMileage: 20000, kmAnnuiPrevisti: 15000 }; 
 
-  useEffect(() => {
-    // Avvia la scansione automatica all'apertura se l'utente è loggato
-    const initAutoScan = async () => {
-      if (user) {
-        console.log("Ricerca veicoli associati via Bluetooth...");
-        // Inizialmente cerchiamo un placeholder, poi lo leggeremo dal DB
-        await scanAndConnectVehicle("Tesla_BT", true); 
-      }
-    };
-    
-    initAutoScan();
-  }, [user]);
+  const handleSync = async (nuoviKm: number) => {
+    // Aggiorna il database con i km confermati/corretti
+    // const ref = doc(db, 'users', user.uid, 'vehicles', vehicle.id);
+    // await updateDoc(ref, { currentMileage: nuoviKm, updatedAt: serverTimestamp() });
+    console.log("KM Sincronizzati:", nuoviKm);
+  };
 
   return (
-    <div className="flex flex-col gap-6 p-4 pb-20">
+    <div className="p-4 space-y-4">
       <AdsBanner />
+      <h1 className="text-2xl font-bold italic text-blue-900">CareAutoPro</h1>
       
-      <header className="space-y-1">
-        <h1 className="text-3xl font-extrabold tracking-tight text-blue-900 italic">
-          CareAutoPro
-        </h1>
-        <p className="text-sm text-muted-foreground font-medium">
-          Monitoraggio intelligente attivo • {new Date().toLocaleDateString()}
-        </p>
-      </header>
-
-      {/* Spazio per le card dei veicoli caricate da IDX */}
+      {/* Il popup si attiva solo se necessario grazie alla logica interna */}
+      <SmartMileageSync vehicle={vehicle} onConfirm={handleSync} />
+      
       <div className="grid gap-4">
-        {/* I componenti VehicleCard appariranno qui */}
+        {/* Card dei Veicoli */}
       </div>
-
+      
       <AdsBanner />
-
-      <footer className="fixed bottom-4 left-4 right-4 text-[10px] text-center text-muted-foreground bg-white/80 backdrop-blur py-2 rounded-full border">
-        Scanner Bluetooth in background • Protetto da Firebase Auth
-      </footer>
     </div>
   );
 }
