@@ -17,7 +17,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <AdsBanner />
         </main>
         <footer className="py-6 border-t bg-background">
-          <div className="container px-4 text-center text-xs text-muted-foreground">
+          <div className="container px-4 text-center text-xs text-muted-foreground font-medium">
             CareAutoPro v1.0 - Il tuo assistente intelligente per la manutenzione.
           </div>
         </footer>
