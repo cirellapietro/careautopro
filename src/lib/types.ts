@@ -54,6 +54,11 @@ export type Vehicle = {
   dataoraelimina?: string | null;
   isTaxi?: boolean;
   trackingGPS?: boolean;
+  // Automations
+  autoHotspotEnabled?: boolean;
+  autoTrackingEnabled?: boolean;
+  bluetoothMacAddress?: string;
+  bluetoothDeviceName?: string;
 };
 
 export type MaintenanceIntervention = {

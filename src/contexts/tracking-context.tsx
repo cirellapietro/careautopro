@@ -131,7 +131,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
             batch.update(vehicleRef, { 
                 currentMileage: increment(deltaKm),
                 updatedAt: new Date().toISOString(),
-                lastGpsIncrement: deltaKm // Memorizziamo l'ultimo incremento GPS
+                lastGpsIncrement: deltaKm 
             });
         }
 
@@ -160,6 +160,36 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
             console.error("Errore sincronizzazione batch GPS:", err);
         }
     }, [user, firestore]);
+
+    // BLUETOOTH AUTO-AUTOMATION LOGIC
+    useEffect(() => {
+        if (!vehicles || vehicles.length === 0 || isTracking) return;
+
+        // In a real Capacitor app, we would use a Bluetooth LE plugin listener here.
+        // For simulation and PWA, we can check for paired devices if available or use a mocked interval.
+        const checkBluetoothDevices = () => {
+            // Check each vehicle for auto-automation
+            for (const v of vehicles) {
+                if (v.autoTrackingEnabled && v.bluetoothMacAddress) {
+                    // MOCK: In a real app, logic would be: if (connectedDevice.id === v.bluetoothMacAddress)
+                    // We check if this device was "simulated" as connected in localStorage for demo
+                    const isSimulatedConnected = localStorage.getItem(`simulated_bt_connected_${v.id}`) === 'true';
+                    
+                    if (isSimulatedConnected) {
+                        toast({ 
+                            title: 'Bluetooth Rilevato!', 
+                            description: `Avvio automatico per ${v.name}. ${v.autoHotspotEnabled ? 'Hotspot attivato.' : ''}` 
+                        });
+                        startTracking(v.id);
+                        break; 
+                    }
+                }
+            }
+        };
+
+        const interval = setInterval(checkBluetoothDevices, 5000);
+        return () => clearInterval(interval);
+    }, [vehicles, isTracking, toast]);
 
     useEffect(() => {
         if (!isTracking || !trackedVehicleId || permissionStatus === 'denied') {
@@ -251,8 +281,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
             const vehicleRef = doc(firestore, `users/${user.uid}/vehicles`, trackedVehicleId);
             await updateDoc(vehicleRef, { 
                 trackingGPS: false,
-                lastTrackedAt: new Date().toISOString(),
-                totalGpsDistance: increment(trackedDistance)
+                lastTrackedAt: new Date().toISOString()
             });
 
             toast({ title: 'Tracking Fermato', description: `Hai percorso ${trackedDistance.toFixed(2)} km in totale.` });

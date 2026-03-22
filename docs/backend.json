@@ -75,6 +75,10 @@
           "type": "string",
           "description": "Reference to User. (Relationship: User 1:N Vehicle)"
         },
+        "name": {
+          "type": "string",
+          "description": "User-defined name for the vehicle."
+        },
         "make": {
           "type": "string",
           "description": "Make of the vehicle."
@@ -107,6 +111,22 @@
         "trackingGPS": {
           "type": "boolean",
           "description": "Indicates if the GPS tracking is currently active for this vehicle."
+        },
+        "autoHotspotEnabled": {
+          "type": "boolean",
+          "description": "If true, the app will try to enable Wi-Fi hotspot when this vehicle is detected."
+        },
+        "autoTrackingEnabled": {
+          "type": "boolean",
+          "description": "If true, the app will automatically start GPS tracking when this vehicle is detected via Bluetooth."
+        },
+        "bluetoothMacAddress": {
+          "type": "string",
+          "description": "The unique ID or MAC address of the vehicle's Bluetooth system."
+        },
+        "bluetoothDeviceName": {
+          "type": "string",
+          "description": "The friendly name of the vehicle's Bluetooth system."
         },
         "dataoraelimina": {
           "type": "string",
@@ -163,324 +183,6 @@
         "dueDate",
         "completed"
       ]
-    },
-    "MaintenanceCheck": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "MaintenanceCheck",
-      "type": "object",
-      "description": "Represents a maintenance check to be performed on a vehicle, part of a maintenance plan.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the maintenance check entity."
-        },
-        "vehicleTypeId": {
-          "type": "string",
-          "description": "Reference to VehicleType. (Relationship: VehicleType 1:N MaintenanceCheck)"
-        },
-        "description": {
-          "type": "string",
-          "description": "Description of the maintenance check."
-        },
-        "intervalMileage": {
-          "type": "number",
-          "description": "Mileage interval at which the maintenance check should be performed."
-        },
-        "intervalTime": {
-          "type": "number",
-          "description": "Time interval (in months) at which the maintenance check should be performed."
-        },
-        "dataoraelimina": {
-          "type": "string",
-          "description": "Timestamp of logical deletion.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "vehicleTypeId",
-        "description"
-      ]
-    },
-    "CustomMaintenanceCheck": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "CustomMaintenanceCheck",
-      "type": "object",
-      "description": "Represents a custom maintenance check specific to a vehicle, overriding the default maintenance plan.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the custom maintenance check entity."
-        },
-        "vehicleId": {
-          "type": "string",
-          "description": "Reference to Vehicle. (Relationship: Vehicle 1:N CustomMaintenanceCheck)"
-        },
-        "maintenanceCheckId": {
-          "type": "string",
-          "description": "Reference to MaintenanceCheck. (Relationship: MaintenanceCheck 1:N CustomMaintenanceCheck)"
-        },
-        "overrideIntervalMileage": {
-          "type": "number",
-          "description": "Overridden mileage interval for the maintenance check."
-        },
-        "overrideIntervalTime": {
-          "type": "number",
-          "description": "Overridden time interval for the maintenance check."
-        },
-        "disabled": {
-          "type": "boolean",
-          "description": "Indicates whether the maintenance check is disabled for the vehicle."
-        },
-        "dataoraelimina": {
-          "type": "string",
-          "description": "Timestamp of logical deletion.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "vehicleId",
-        "maintenanceCheckId"
-      ]
-    },
-    "VehicleType": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "VehicleType",
-      "type": "object",
-      "description": "Represents a type of vehicle (e.g., Petrol, Diesel, Electric).",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the vehicle type entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "Name of the vehicle type."
-        },
-        "averageAnnualMileage": {
-          "type": "number",
-          "description": "Estimated average annual mileage for this type of vehicle."
-        },
-        "dataoraelimina": {
-          "type": "string",
-          "description": "Timestamp of logical deletion.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "name",
-        "averageAnnualMileage"
-      ]
-    },
-    "TrackingSession": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "TrackingSession",
-      "type": "object",
-      "description": "Represents a tracking session for a vehicle, recording distance and time.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the tracking session."
-        },
-        "vehicleId": {
-          "type": "string",
-          "description": "Reference to Vehicle. (Relationship: Vehicle 1:N TrackingSession)"
-        },
-        "startTime": {
-          "type": "string",
-          "description": "Start time of the tracking session.",
-          "format": "date-time"
-        },
-        "endTime": {
-          "type": "string",
-          "description": "End time of the tracking session.",
-          "format": "date-time"
-        },
-        "distanceTraveled": {
-          "type": "number",
-          "description": "Total distance traveled during the tracking session."
-        },
-        "dataoraelimina": {
-          "type": "string",
-          "description": "Timestamp of logical deletion.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "vehicleId",
-        "startTime",
-        "endTime",
-        "distanceTraveled"
-      ]
-    },
-    "DailyStatistics": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "DailyStatistics",
-      "type": "object",
-      "description": "Represents daily statistics for a vehicle, aggregating distance and time data.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the daily statistics entry."
-        },
-        "vehicleId": {
-          "type": "string",
-          "description": "Reference to Vehicle. (Relationship: Vehicle 1:N DailyStatistics)"
-        },
-        "date": {
-          "type": "string",
-          "description": "Date for which the statistics are recorded.",
-          "format": "date-time"
-        },
-        "totalDistance": {
-          "type": "number",
-          "description": "Total distance traveled by the vehicle on the given date."
-        },
-        "totalTime": {
-          "type": "number",
-          "description": "Total time the vehicle was in use on the given date."
-        },
-        "dataoraelimina": {
-          "type": "string",
-          "description": "Timestamp of logical deletion.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "vehicleId",
-        "date",
-        "totalDistance",
-        "totalTime"
-      ]
-    },
-    "Alert": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Alert",
-      "type": "object",
-      "description": "Represents an alert or notification for the user.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the alert."
-        },
-        "userId": {
-          "type": "string",
-          "description": "Reference to User. (Relationship: User 1:N Alert)"
-        },
-        "message": {
-          "type": "string",
-          "description": "Message content of the alert."
-        },
-        "type": {
-          "type": "string",
-          "description": "Type of alert (e.g., maintenance reminder, low fuel)."
-        },
-        "timestamp": {
-          "type": "string",
-          "description": "Timestamp of when the alert was created.",
-          "format": "date-time"
-        },
-        "isRead": {
-          "type": "boolean",
-          "description": "Indicates whether the alert has been read by the user."
-        },
-        "dataoraelimina": {
-          "type": "string",
-          "description": "Timestamp of logical deletion.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "userId",
-        "message",
-        "type",
-        "timestamp",
-        "isRead"
-      ]
-    },
-    "Config": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Config",
-      "type": "object",
-      "description": "Represents global, non-sensitive application configuration settings.",
-      "properties": {
-        "soggettoemail": {
-          "type": "string",
-          "description": "Default subject for outgoing emails."
-        },
-        "templateemail": {
-          "type": "string",
-          "description": "Identifier for the email template to use."
-        },
-        "loglevel": {
-          "type": "string",
-          "description": "The logging level for the application.",
-          "enum": [
-            "debug",
-            "info",
-            "warn",
-            "error"
-          ]
-        },
-        "debug": {
-          "type": "boolean",
-          "description": "A general flag to enable or disable debug mode."
-        },
-        "inviamessaggireali": {
-          "type": "boolean",
-          "description": "Flag to determine if real messages should be sent (e.g., emails, SMS)."
-        },
-        "admobidpublisher": {
-          "type": "string",
-          "description": "AdMob publisher ID."
-        },
-        "admobidapp": {
-          "type": "string",
-          "description": "AdMob App ID."
-        },
-        "numeroorefrequenzasincronizzazionepwa": {
-          "type": "number",
-          "description": "Synchronization frequency for the PWA in hours."
-        },
-        "configDebugMode": {
-          "type": "boolean",
-          "description": "Specific flag for configuration debugging."
-        }
-      }
-    },
-    "Role": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Role",
-      "type": "object",
-      "description": "Represents a user role in the application.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the role entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "The name of the role (e.g., 'Amministratore', 'Utente')."
-        },
-        "description": {
-          "type": "string",
-          "description": "A brief description of the role's permissions."
-        },
-        "dataoraelimina": {
-          "type": "string",
-          "description": "Timestamp of logical deletion.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "name"
-      ]
     }
   },
   "auth": {
@@ -499,13 +201,7 @@
           "schema": {
             "$ref": "#/backend/entities/User"
           },
-          "description": "Stores user profile information. Uses path-based ownership for data isolation.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier for the user."
-            }
-          ]
+          "description": "Stores user profile information."
         }
       },
       {
@@ -515,204 +211,9 @@
           "schema": {
             "$ref": "#/backend/entities/Vehicle"
           },
-          "description": "Stores vehicle information for a specific user. Uses path-based ownership for data isolation.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier for the user."
-            },
-            {
-              "name": "vehicleId",
-              "description": "The unique identifier for the vehicle."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/vehicles/{vehicleId}/maintenanceInterventions/{interventionId}",
-        "definition": {
-          "entityName": "MaintenanceIntervention",
-          "schema": {
-            "$ref": "#/backend/entities/MaintenanceIntervention"
-          },
-          "description": "Stores maintenance interventions for a specific vehicle. Includes denormalized 'userId' for authorization independence.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier for the user."
-            },
-            {
-              "name": "vehicleId",
-              "description": "The unique identifier for the vehicle."
-            },
-            {
-              "name": "interventionId",
-              "description": "The unique identifier for the maintenance intervention."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/vehicles/{vehicleId}/customMaintenanceChecks/{checkId}",
-        "definition": {
-          "entityName": "CustomMaintenanceCheck",
-          "schema": {
-            "$ref": "#/backend/entities/CustomMaintenanceCheck"
-          },
-          "description": "Stores custom maintenance checks for a specific vehicle. Includes denormalized 'userId' for authorization independence.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier for the user."
-            },
-            {
-              "name": "vehicleId",
-              "description": "The unique identifier for the vehicle."
-            },
-            {
-              "name": "checkId",
-              "description": "The unique identifier for the custom maintenance check."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/vehicles/{vehicleId}/trackingSessions/{sessionId}",
-        "definition": {
-          "entityName": "TrackingSession",
-          "schema": {
-            "$ref": "#/backend/entities/TrackingSession"
-          },
-          "description": "Stores tracking sessions for a specific vehicle. Includes denormalized 'userId' for authorization independence.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier for the user."
-            },
-            {
-              "name": "vehicleId",
-              "description": "The unique identifier for the vehicle."
-            },
-            {
-              "name": "sessionId",
-              "description": "The unique identifier for the tracking session."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/vehicles/{vehicleId}/dailyStatistics/{statisticsId}",
-        "definition": {
-          "entityName": "DailyStatistics",
-          "schema": {
-            "$ref": "#/backend/entities/DailyStatistics"
-          },
-          "description": "Stores daily statistics for a specific vehicle. Includes denormalized 'userId' for authorization independence.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier for the user."
-            },
-            {
-              "name": "vehicleId",
-              "description": "The unique identifier for the vehicle."
-            },
-            {
-              "name": "statisticsId",
-              "description": "The unique identifier for the daily statistics."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/alerts/{alertId}",
-        "definition": {
-          "entityName": "Alert",
-          "schema": {
-            "$ref": "#/backend/entities/Alert"
-          },
-          "description": "Stores alerts for a specific user. Uses path-based ownership for data isolation.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier for the user."
-            },
-            {
-              "name": "alertId",
-              "description": "The unique identifier for the alert."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/vehicleTypes/{vehicleTypeId}",
-        "definition": {
-          "entityName": "VehicleType",
-          "schema": {
-            "$ref": "#/backend/entities/VehicleType"
-          },
-          "description": "Stores vehicle type information. Publicly readable.",
-          "params": [
-            {
-              "name": "vehicleTypeId",
-              "description": "The unique identifier for the vehicle type."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/vehicleTypes/{vehicleTypeId}/maintenanceChecks/{checkId}",
-        "definition": {
-          "entityName": "MaintenanceCheck",
-          "schema": {
-            "$ref": "#/backend/entities/MaintenanceCheck"
-          },
-          "description": "Stores maintenance checks for a specific vehicle type. Publicly readable.",
-          "params": [
-            {
-              "name": "vehicleTypeId",
-              "description": "The unique identifier for the vehicle type."
-            },
-            {
-              "name": "checkId",
-              "description": "The unique identifier for the maintenance check."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/config/{configId}",
-        "definition": {
-          "entityName": "Config",
-          "schema": {
-            "$ref": "#/backend/entities/Config"
-          },
-          "description": "Stores global, non-sensitive application settings. Typically contains a single document with a known ID like 'main'. Publicly readable.",
-          "params": [
-            {
-              "name": "configId",
-              "description": "The unique identifier for the configuration document (e.g., 'main')."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/roles/{roleId}",
-        "definition": {
-          "entityName": "Role",
-          "schema": {
-            "$ref": "#/backend/entities/Role"
-          },
-          "description": "Stores user role definitions. Publicly readable, but writable only by administrators.",
-          "params": [
-            {
-              "name": "roleId",
-              "description": "The unique identifier for the role."
-            }
-          ]
+          "description": "Stores vehicle information for a specific user."
         }
       }
-    ],
-    "reasoning": "The Firestore data structure is designed to ensure security, scalability, and ease of debugging, adhering to the core design principles of Authorization Independence, Clarity of Intent, DBAC (Database-Based Access Control), and QAPs (Rules are not Filters). The structure emphasizes path-based ownership and denormalization of authorization data to avoid hierarchical authorization dependencies and facilitate atomic operations.\\n\\n1.  **Authorization Independence:** This is achieved primarily through denormalization. For example, the `/users/{userId}/vehicles/{vehicleId}` path establishes clear ownership. Any data requiring authorization based on vehicle attributes (e.g., maintenance interventions) will include the `userId` as a field, removing the need to fetch parent data. For collaborative scenarios (if any), a `members` map would be denormalized into relevant subcollections.\\n\\n2.  **Clarity of Intent:** The path structure clearly reflects the relationships between entities. For instance, `/users/{userId}/vehicles/{vehicleId}/maintenanceInterventions/{interventionId}` explicitly shows that maintenance interventions belong to a specific vehicle owned by a specific user. This makes the intent of the security rules more transparent.\\n\\n3.  **DBAC (Database-Based Access Control):** User roles are now explicitly defined in the User entity, allowing for role-based access control. The `isAdmin()` function in the security rules leverages this 'role' field to grant privileged access to administrators across the database, while standard users remain confined to their own data via path-based ownership rules (`isOwner()`).\\n\\n4.  **QAPs (Rules are not Filters):** The structure supports secure `list` operations by segregating data with different access needs. Path-based ownership (`/users/{userId}/vehicles`) ensures that listing vehicles under a user is inherently secure for the owner. For administrators, the `isAdmin()` check allows them to list documents across user boundaries, like listing all users in the `/users` collection, which is denied to regular users.\\n\\n5.  **Invariants:** The structure supports data integrity by making ownership explicit in the path. Timestamps for alerts are directly stored in the alert documents, which simplifies their management and querying. Denormalized data, such as the `userId` in `MaintenanceIntervention`, enforces the invariant that every intervention is tied to a specific user's vehicle, and thus controlled by the user or an administrator."
+    ]
   }
 }

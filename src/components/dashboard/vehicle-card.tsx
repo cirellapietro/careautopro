@@ -5,7 +5,7 @@ import { type Vehicle } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Car, Zap, Leaf, Flame, PlayCircle, StopCircle, Loader2, Gauge, Timer, Activity } from 'lucide-react';
+import { Car, Zap, Leaf, Flame, PlayCircle, StopCircle, Loader2, Gauge, Timer, Activity, Bluetooth, Wifi } from 'lucide-react';
 import React from 'react';
 import { useTracking } from '@/contexts/tracking-context';
 import { cn } from '@/lib/utils';
@@ -49,6 +49,7 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
   } = useTracking();
 
   const isThisVehicleBeingTracked = trackedVehicleId === vehicle.id && isTracking;
+  const isAutomationEnabled = vehicle.autoTrackingEnabled || vehicle.autoHotspotEnabled;
   
   // Abilitiamo il tasto se il permesso non è espressamente negato
   const canStartTracking = permissionStatus !== 'denied';
@@ -62,9 +63,6 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
     : 'N/D';
 
   const baseMileage = typeof vehicle.currentMileage === 'number' ? vehicle.currentMileage : 0;
-  
-  // Chilometraggio totale aggiornato in tempo reale durante il tracking.
-  // Sommiamo al baseMileage (dal DB) la liveSessionDistance (km percorsi ma non ancora sincronizzati nel DB).
   const displayMileage = isThisVehicleBeingTracked ? baseMileage + liveSessionDistance : baseMileage;
 
   const handleCardClick = () => {
@@ -105,7 +103,7 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
     if (isTracking) {
        return (
             <Button onClick={(e) => handleButtonClick(e, () => switchTrackingTo(vehicle.id))} variant="outline" className="w-full border-primary text-primary hover:bg-primary/5">
-                <PlayCircle className="mr-2 h-4 w-4" /> Passa Tracking a questo Veicolo
+                <PlayCircle className="mr-2 h-4 w-4" /> Passa Tracking qui
             </Button>
         );
     }
@@ -137,6 +135,13 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
                 </span>
             </div>
         )}
+
+        {isAutomationEnabled && !isThisVehicleBeingTracked && (
+            <div className="absolute top-2 left-2 flex gap-1">
+                {vehicle.autoHotspotEnabled && <Wifi className="h-3 w-3 text-primary animate-pulse" />}
+                {vehicle.autoTrackingEnabled && <Bluetooth className="h-3 w-3 text-primary animate-pulse" />}
+            </div>
+        )}
         
         <CardHeader className="flex flex-col items-center justify-center p-6 text-center">
             <div className={cn(
@@ -159,7 +164,6 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
                         "font-bold text-xl tabular-nums transition-colors", 
                         isThisVehicleBeingTracked ? "text-destructive" : "text-foreground"
                     )}>
-                        {/* Arrotondiamo sempre all'intero per una visualizzazione pulita */}
                         {Math.round(displayMileage).toLocaleString('it-IT')} km
                     </span>
                 </div>
