@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useMemo, useRef } from 'react';
@@ -51,6 +52,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
     const lastPositionRef = useRef<GeolocationCoordinates | null>(null);
     const distanceRef = useRef(0);
     const syncedDistanceRef = useRef(0);
+    const syncedTimeSecondsRef = useRef(0);
     const startTimeRef = useRef<Date | null>(null);
 
     // Fetch vehicles from Firestore
@@ -111,21 +113,50 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
         }
     }, [user?.uid]);
 
-    // Funzione core per incrementare il chilometraggio nel DB
-    const syncMileageToDb = useCallback((vehicleId: string, delta: number) => {
-        if (!user || !firestore || delta <= 0) return;
-        const vehicleRef = doc(firestore, `users/${user.uid}/vehicles`, vehicleId);
+    // Funzione core per incrementare il chilometraggio nel DB (sia veicolo che stats)
+    const syncMileageToDb = useCallback(async (vehicleId: string, deltaKm: number, deltaSeconds: number) => {
+        if (!user || !firestore || (deltaKm <= 0 && deltaSeconds <= 0)) return;
         
-        // Usiamo increment() per essere sicuri di non sovrascrivere dati
-        updateDoc(vehicleRef, { 
-            currentMileage: increment(delta),
-            updatedAt: new Date().toISOString()
-        }).then(() => {
+        const vehicleRef = doc(firestore, `users/${user.uid}/vehicles`, vehicleId);
+        const todayId = new Date().toISOString().split('T')[0].replace(/-/g, '');
+        const dailyStatRef = doc(firestore, `users/${user.uid}/vehicles/${vehicleId}/dailyStatistics`, todayId);
+
+        const batch = writeBatch(firestore);
+        
+        // 1. Incrementa i km attuali del veicolo
+        if (deltaKm > 0) {
+            batch.update(vehicleRef, { 
+                currentMileage: increment(deltaKm),
+                updatedAt: new Date().toISOString()
+            });
+        }
+
+        // 2. Incrementa le statistiche giornaliere (Km e Minuti)
+        const deltaMin = deltaSeconds / 60;
+        batch.set(dailyStatRef, {
+            id: todayId,
+            vehicleId: vehicleId,
+            date: new Date().toISOString(),
+            totalDistance: increment(deltaKm),
+            totalTime: increment(deltaMin),
+            dataoraelimina: null
+        }, { merge: true });
+
+        try {
+            await batch.commit();
+            // Aggiorniamo i riferimenti di sincronizzazione dopo il successo
+            syncedDistanceRef.current = distanceRef.current;
+            syncedTimeSecondsRef.current = Math.floor((Date.now() - (startTimeRef.current?.getTime() || Date.now())) / 1000);
+            
+            setSyncedDistance(syncedDistanceRef.current);
+
             if (user?.uid) {
-                // Salviamo lo stato di sincronizzazione in locale
-                localStorage.setItem(`syncedDistance_${user.uid}`, distanceRef.current.toString());
+                localStorage.setItem(`syncedDistance_${user.uid}`, syncedDistanceRef.current.toString());
+                localStorage.setItem(`syncedTimeSeconds_${user.uid}`, syncedTimeSecondsRef.current.toString());
             }
-        }).catch(err => console.error("Errore sincronizzazione chilometri:", err));
+        } catch (err) {
+            console.error("Errore sincronizzazione batch GPS:", err);
+        }
     }, [user, firestore]);
 
     // Motore GPS
@@ -146,7 +177,8 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
 
         durationIntervalRef.current = setInterval(() => {
             if (startTimeRef.current) {
-                setSessionDuration(Math.floor((Date.now() - startTimeRef.current.getTime()) / 1000));
+                const currentDuration = Math.floor((Date.now() - startTimeRef.current.getTime()) / 1000);
+                setSessionDuration(currentDuration);
             }
         }, 1000);
 
@@ -166,10 +198,10 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
 
                     // Sincronizzazione automatica ogni 100 metri (0.1 km)
                     const unsyncedDistance = distanceRef.current - syncedDistanceRef.current;
+                    const unsyncedSeconds = Math.floor((Date.now() - (startTimeRef.current?.getTime() || Date.now())) / 1000) - syncedTimeSecondsRef.current;
+
                     if (unsyncedDistance >= 0.1) {
-                        syncMileageToDb(trackedVehicleId, unsyncedDistance);
-                        syncedDistanceRef.current = distanceRef.current;
-                        setSyncedDistance(syncedDistanceRef.current);
+                        syncMileageToDb(trackedVehicleId, unsyncedDistance, unsyncedSeconds);
                     }
                     lastPositionRef.current = position.coords;
                 }
@@ -198,8 +230,9 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
     const stopTracking = useCallback(async () => {
         setIsStopping(true);
         const trackedDistance = distanceRef.current;
-        const trackedDurationMin = startTimeRef.current ? (Date.now() - startTimeRef.current.getTime()) / 60000 : 0;
         const finalUnsyncedDistance = trackedDistance - syncedDistanceRef.current;
+        const currentTotalSeconds = Math.floor((Date.now() - (startTimeRef.current?.getTime() || Date.now())) / 1000);
+        const finalUnsyncedSeconds = currentTotalSeconds - syncedTimeSecondsRef.current;
 
         if (!user || !firestore || !trackedVehicleId) {
             setIsTracking(false);
@@ -208,67 +241,32 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
         }
 
         try {
-            const batch = writeBatch(firestore);
-            const vehicleRef = doc(firestore, `users/${user.uid}/vehicles`, trackedVehicleId);
-            batch.update(vehicleRef, { trackingGPS: false });
-
-            // Salviamo la sessione solo se abbiamo percorso una distanza significativa (> 10 metri)
-            if (trackedDistance > 0.01) {
-                const sessionRef = doc(collection(vehicleRef, 'trackingSessions'));
-                batch.set(sessionRef, {
-                    id: sessionRef.id,
-                    vehicleId: trackedVehicleId,
-                    startTime: startTimeRef.current?.toISOString(),
-                    endTime: new Date().toISOString(),
-                    distanceTraveled: trackedDistance,
-                    duration: trackedDurationMin,
-                    dataoraelimina: null,
-                });
-                
-                // Incremento finale per i chilometri non ancora sincronizzati
-                if (finalUnsyncedDistance > 0) {
-                    batch.update(vehicleRef, { currentMileage: increment(finalUnsyncedDistance) });
-                }
-
-                const todayId = new Date().toISOString().split('T')[0].replace(/-/g, '');
-                const dailyStatRef = doc(collection(vehicleRef, 'dailyStatistics'), todayId);
-                const dailySnap = await getDoc(dailyStatRef);
-
-                if (dailySnap.exists()) {
-                    batch.update(dailyStatRef, { 
-                        totalDistance: increment(trackedDistance), 
-                        totalTime: increment(trackedDurationMin) 
-                    });
-                } else {
-                    batch.set(dailyStatRef, { 
-                        id: todayId, 
-                        vehicleId: trackedVehicleId, 
-                        date: new Date().toISOString(), 
-                        totalDistance: trackedDistance, 
-                        totalTime: trackedDurationMin, 
-                        dataoraelimina: null 
-                    });
-                }
-                await batch.commit();
-                toast({ title: 'Tracking Fermato', description: `Hai percorso ${trackedDistance.toFixed(2)} km.` });
-            } else {
-                await updateDoc(vehicleRef, { trackingGPS: false });
+            // Ultima sincronizzazione dei km residui
+            if (finalUnsyncedDistance > 0 || finalUnsyncedSeconds > 0) {
+                await syncMileageToDb(trackedVehicleId, Math.max(0, finalUnsyncedDistance), Math.max(0, finalUnsyncedSeconds));
             }
+
+            const vehicleRef = doc(firestore, `users/${user.uid}/vehicles`, trackedVehicleId);
+            await updateDoc(vehicleRef, { trackingGPS: false });
+
+            toast({ title: 'Tracking Fermato', description: `Hai percorso ${trackedDistance.toFixed(2)} km in totale.` });
         } catch (e) { 
-            console.error("Errore salvataggio sessione:", e); 
+            console.error("Errore salvataggio sessione finale:", e); 
         } finally {
             setIsTracking(false);
-            distanceRef.current = 0; syncedDistanceRef.current = 0; lastPositionRef.current = null; startTimeRef.current = null;
+            distanceRef.current = 0; syncedDistanceRef.current = 0; syncedTimeSecondsRef.current = 0; 
+            lastPositionRef.current = null; startTimeRef.current = null;
             setSessionDistance(0); setSessionDuration(0); setSyncedDistance(0);
             if (user?.uid) {
                 localStorage.removeItem(`isTracking_${user.uid}`);
                 localStorage.removeItem(`sessionDistance_${user.uid}`);
                 localStorage.removeItem(`syncedDistance_${user.uid}`);
+                localStorage.removeItem(`syncedTimeSeconds_${user.uid}`);
                 localStorage.removeItem(`startTime_${user.uid}`);
             }
             setIsStopping(false);
         }
-    }, [user, firestore, trackedVehicleId, toast]);
+    }, [user, firestore, trackedVehicleId, syncMileageToDb, toast]);
 
     const startTracking = useCallback((id?: string) => {
         const targetId = id || trackedVehicleId;
@@ -294,9 +292,9 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
         }
     }, []);
 
-    // I km totali di oggi sono la somma di quanto già salvato nel DB oggi + la sessione corrente
-    const dailyTotalDistance = todayDbStats.distance + sessionDistance;
-    const dailyTotalTime = todayDbStats.time + (sessionDuration / 60);
+    // I km totali di oggi sono la somma di quanto già salvato nel DB oggi + la sessione corrente non sincronizzata
+    const dailyTotalDistance = todayDbStats.distance + (sessionDistance - syncedDistance);
+    const dailyTotalTime = todayDbStats.time + ((sessionDuration - syncedTimeSecondsRef.current) / 60);
 
     const value = useMemo(() => ({
         permissionStatus, isTracking, isStopping, trackedVehicleId, setTrackedVehicleId, startTracking, stopTracking, switchTrackingTo,

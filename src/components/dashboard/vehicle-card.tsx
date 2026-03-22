@@ -1,3 +1,4 @@
+
 'use client';
 
 import { type Vehicle } from '@/lib/types';
@@ -104,7 +105,7 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
     if (isTracking) {
        return (
             <Button onClick={(e) => handleButtonClick(e, () => switchTrackingTo(vehicle.id))} variant="outline" className="w-full border-primary text-primary hover:bg-primary/5">
-                <PlayCircle className="mr-2 h-4 w-4" /> Passa Tracking a questo Meicolo
+                <PlayCircle className="mr-2 h-4 w-4" /> Passa Tracking a questo Veicolo
             </Button>
         );
     }
