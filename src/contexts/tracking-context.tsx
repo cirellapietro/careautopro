@@ -57,7 +57,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
     }, [user, firestore]);
     const { data: vehicles } = useCollection<Vehicle>(vehiclesQuery);
     
-    // CARICAMENTO INIZIALE
+    // CARICAMENTO INIZIALE STATO LOCALE
     useEffect(() => {
         if (user?.uid) {
             const userId = user.uid;
@@ -96,7 +96,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
         }
     }, [user?.uid]);
 
-    // Sincronizza i chilometri nel DB periodicamente
+    // Sincronizza i chilometri nel DB periodicamente durante la sessione
     const syncMileageToDb = useCallback((vehicleId: string, delta: number) => {
         if (!user || !firestore || delta <= 0) return;
         
@@ -112,7 +112,8 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
 
     // MOTORE DI CALCOLO GPS
     useEffect(() => {
-        if (!isTracking || !trackedVehicleId || permissionStatus !== 'granted') {
+        // Se non siamo in tracking o il permesso è negato, puliamo tutto
+        if (!isTracking || !trackedVehicleId || permissionStatus === 'denied') {
             if (watchIdRef.current !== null) {
                 navigator.geolocation.clearWatch(watchIdRef.current);
                 watchIdRef.current = null;
@@ -124,6 +125,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
             return;
         }
 
+        // Inizializza il tempo se non presente
         if (!startTimeRef.current) {
             startTimeRef.current = new Date();
             if (user?.uid) {
@@ -132,6 +134,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
             }
         }
 
+        // Timer per la durata
         durationIntervalRef.current = setInterval(() => {
             if (startTimeRef.current) {
                 const elapsedSeconds = Math.floor((Date.now() - startTimeRef.current.getTime()) / 1000);
@@ -139,8 +142,12 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
             }
         }, 1000);
 
+        // Avvio effettivo del watchPosition
         watchIdRef.current = navigator.geolocation.watchPosition(
             (position) => {
+                // Aggiorniamo lo status a 'granted' non appena riceviamo la prima posizione
+                if (permissionStatus !== 'granted') setPermissionStatus('granted');
+
                 if (position.coords.accuracy > 100) return;
 
                 if (!lastPositionRef.current) {
@@ -155,7 +162,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
                     position.coords.longitude
                 );
                 
-                if (d > 0.003) { 
+                if (d > 0.003) { // Soglia 3 metri per evitare micro-oscillazioni
                     distanceRef.current += d;
                     setSessionDistance(distanceRef.current);
                     
@@ -164,7 +171,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
                     }
 
                     const unsyncedDistance = distanceRef.current - syncedDistanceRef.current;
-                    // Sincronizza ogni 200 metri nel DB principale
+                    // Sincronizza ogni 200 metri nel DB principale durante il viaggio
                     if (unsyncedDistance >= 0.2) {
                         syncMileageToDb(trackedVehicleId, unsyncedDistance);
                         syncedDistanceRef.current = distanceRef.current;
@@ -176,7 +183,11 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
             },
             (error) => {
                 console.error("GPS Error:", error);
-                if (error.code === 1) setPermissionStatus('denied');
+                if (error.code === 1) {
+                    setPermissionStatus('denied');
+                    setIsTracking(false);
+                    toast({ variant: 'destructive', title: 'Permesso GPS negato', description: 'Impossibile tracciare il veicolo senza accesso alla posizione.' });
+                }
             },
             { 
                 enableHighAccuracy: true, 
@@ -189,7 +200,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
             if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current);
             if (durationIntervalRef.current) clearInterval(durationIntervalRef.current);
         };
-    }, [isTracking, trackedVehicleId, permissionStatus, user?.uid, syncMileageToDb]);
+    }, [isTracking, trackedVehicleId, permissionStatus, user?.uid, syncMileageToDb, toast]);
 
     const setTrackedVehicleId = useCallback((id: string | null) => {
         _setTrackedVehicleId(id);
@@ -227,12 +238,12 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
             return;
         }
 
-        if (permissionStatus !== 'granted') {
-            toast({ variant: 'destructive', title: 'Permessi GPS', description: 'Abilita i permessi GPS per tracciare i chilometri.' });
+        if (permissionStatus === 'denied') {
+            toast({ variant: 'destructive', title: 'Permessi GPS negati', description: 'Abilita i permessi di geolocalizzazione nelle impostazioni del browser.' });
             return;
         }
 
-        // Reset state for new session
+        // Reset dello stato per una nuova sessione pulita
         resetTrackingState();
         
         const vehicleRef = doc(firestore, `users/${user.uid}/vehicles`, idToTrack);
@@ -321,6 +332,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
         startTracking(newVehicleId);
     }, [isTracking, stopTracking, startTracking]);
 
+    // Rilevamento stato permessi iniziale (se supportato dal browser)
     useEffect(() => {
         if (typeof window !== 'undefined') {
             if ('permissions' in navigator) {
@@ -328,11 +340,6 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
                     setPermissionStatus(result.state as PermissionStatus);
                     result.onchange = () => setPermissionStatus(result.state as PermissionStatus);
                 });
-            } else {
-                 navigator.geolocation.getCurrentPosition(
-                    () => setPermissionStatus('granted'),
-                    () => setPermissionStatus('denied')
-                );
             }
         }
     }, []);

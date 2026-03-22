@@ -48,7 +48,9 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
   } = useTracking();
 
   const isThisVehicleBeingTracked = trackedVehicleId === vehicle.id && isTracking;
-  const canStartTracking = permissionStatus === 'granted';
+  
+  // Abilitiamo il tasto se il permesso non è espressamente negato
+  const canStartTracking = permissionStatus !== 'denied';
 
   const registrationYear = vehicle.registrationDate && !isNaN(new Date(vehicle.registrationDate).getTime()) 
     ? new Date(vehicle.registrationDate).getFullYear() 
