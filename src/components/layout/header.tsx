@@ -1,4 +1,3 @@
-
 "use client"
 import Link from "next/link"
 import {
@@ -86,19 +85,9 @@ const UserMenu = () => {
 )}
 
 function TrackingIndicator() {
-    const { isTracking, trackedVehicle, sessionDistance, sessionDuration, trackedVehicleId } = useTracking();
+    const { isTracking, trackedVehicle, dailyTotalDistance, dailyTotalTime, trackedVehicleId } = useTracking();
     
-    // Se il tracking è attivo ma l'oggetto veicolo non è ancora caricato, mostriamo comunque uno stato di "Attesa"
     if (!isTracking || !trackedVehicleId) return null;
-
-    const formatDuration = (totalSeconds: number) => {
-        const h = Math.floor(totalSeconds / 3600);
-        const m = Math.floor((totalSeconds % 3600) / 60);
-        const s = totalSeconds % 60;
-        
-        if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-        return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-    };
 
     const vehicleName = trackedVehicle?.name || "Veicolo...";
 
@@ -108,14 +97,14 @@ function TrackingIndicator() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
             </div>
-            <span className="hidden sm:inline uppercase tracking-tighter">GPS ATTIVO:</span>
+            <span className="hidden sm:inline uppercase tracking-tighter">GPS:</span>
             <span className="max-w-[80px] truncate sm:max-w-none">{vehicleName}</span>
             <div className="flex items-center gap-2 border-l border-white/30 ml-1 pl-2">
                 <span className="flex items-center gap-1 tabular-nums">
-                    <Clock className="h-3 w-3" /> {formatDuration(sessionDuration)}
+                    <Clock className="h-3 w-3" /> {Math.floor(dailyTotalTime)}m oggi
                 </span>
                 <span className="flex items-center gap-1 tabular-nums">
-                    <Activity className="h-3 w-3" /> {sessionDistance.toFixed(2)} km
+                    <Activity className="h-3 w-3" /> {dailyTotalDistance.toFixed(1)} km oggi
                 </span>
             </div>
         </div>

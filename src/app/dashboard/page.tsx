@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useUser } from '@/firebase/auth/use-user';
@@ -9,7 +8,7 @@ import type { Vehicle } from '@/lib/types';
 import { VehicleCard } from '@/components/dashboard/vehicle-card';
 import { SmartMileageSync } from '@/components/SmartMileageSync';
 import { AdsBanner } from '@/components/AdsBanner';
-import { Loader2, PlusCircle, Car, AlertTriangle, Activity } from 'lucide-react';
+import { Loader2, PlusCircle, Car, AlertTriangle, Activity, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,7 +18,7 @@ import { useTracking } from '@/contexts/tracking-context';
 export default function DashboardPage() {
   const { user, loading: userLoading } = useUser();
   const { firestore } = useFirebase();
-  const { trackedVehicleId, isTracking } = useTracking();
+  const { trackedVehicleId, isTracking, dailyTotalDistance, dailyTotalTime } = useTracking();
 
   const vehiclesQuery = useMemo(() => {
     if (!user || !firestore) return null;
@@ -31,13 +30,11 @@ export default function DashboardPage() {
 
   const { data: vehicles, isLoading: vehiclesLoading } = useCollection<Vehicle>(vehiclesQuery);
 
-  // Ordiniamo i veicoli: quello in tracking per primo in assoluto
   const sortedVehicles = useMemo(() => {
     if (!vehicles) return [];
     return [...vehicles].sort((a, b) => {
       const aIsActive = (isTracking && a.id === trackedVehicleId) || a.trackingGPS;
       const bIsActive = (isTracking && b.id === trackedVehicleId) || b.trackingGPS;
-
       if (aIsActive && !bIsActive) return -1;
       if (!aIsActive && bIsActive) return 1;
       return 0;
@@ -79,15 +76,23 @@ export default function DashboardPage() {
       )}
 
       <div className="grid gap-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-2">
                 <Car className="h-5 w-5 text-primary" />
                 <h2 className="font-headline text-xl font-bold uppercase tracking-tight">I Tuoi Mezzi</h2>
             </div>
             {(isTracking || activeVehicle?.trackingGPS) && (
-                <Badge variant="destructive" className="animate-pulse gap-1">
-                    <Activity className="h-3 w-3" /> TRACKING GPS ATTIVO
-                </Badge>
+                <div className="flex items-center gap-2">
+                    <Badge variant="destructive" className="animate-pulse gap-2 px-3 py-1 text-xs font-black shadow-lg shadow-destructive/20 border-white/20">
+                        <Activity className="h-3 w-3" /> 
+                        TRACKING GPS ATTIVO
+                    </Badge>
+                    <div className="flex gap-2 items-center text-[10px] font-black uppercase text-destructive-foreground bg-destructive rounded-full px-3 py-1 shadow-sm">
+                        <span className="flex items-center gap-1"><Activity className="h-2 w-2" /> {dailyTotalDistance.toFixed(1)} km oggi</span>
+                        <span className="w-px h-2 bg-white/30" />
+                        <span className="flex items-center gap-1"><Clock className="h-2 w-2" /> {Math.floor(dailyTotalTime)} min oggi</span>
+                    </div>
+                </div>
             )}
         </div>
 
