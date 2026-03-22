@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser } from '@/firebase/auth/use-user';
@@ -18,7 +19,7 @@ import { useTracking } from '@/contexts/tracking-context';
 export default function DashboardPage() {
   const { user, loading: userLoading } = useUser();
   const { firestore } = useFirebase();
-  const { trackedVehicleId, isTracking, dailyTotalDistance, dailyTotalTime } = useTracking();
+  const { trackedVehicleId, lastTrackedVehicleId, isTracking, dailyTotalDistance, dailyTotalTime } = useTracking();
 
   const vehiclesQuery = useMemo(() => {
     if (!user || !firestore) return null;
@@ -40,6 +41,20 @@ export default function DashboardPage() {
       return 0;
     });
   }, [vehicles, trackedVehicleId, isTracking]);
+
+  // Identifichiamo il veicolo per il quale mostrare il prompt di sincronizzazione
+  const vehicleToSync = useMemo(() => {
+      if (!vehicles) return null;
+      // 1. Priorità all'ultimo veicolo tracciato via GPS
+      const lastGps = vehicles.find(v => v.id === lastTrackedVehicleId);
+      if (lastGps) return lastGps;
+      // 2. Altrimenti il veicolo con l'ultimo aggiornamento più vecchio
+      return [...vehicles].sort((a, b) => {
+          const dateA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+          const dateB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+          return dateA - dateB;
+      })[0];
+  }, [vehicles, lastTrackedVehicleId]);
 
   if (userLoading || vehiclesLoading) {
     return (
@@ -68,9 +83,10 @@ export default function DashboardPage() {
         </Button>
       </header>
 
-      {activeVehicle && !isTracking && (
+      {/* Prompt di sincronizzazione intelligente */}
+      {vehicleToSync && !isTracking && (
         <SmartMileageSync 
-          vehicle={activeVehicle} 
+          vehicle={vehicleToSync} 
           onConfirm={(km) => console.log("KM confermati:", km)} 
         />
       )}
