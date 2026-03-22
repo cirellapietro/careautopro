@@ -1,4 +1,3 @@
-
 'use client';
 
 import { type Vehicle } from '@/lib/types';
@@ -60,7 +59,7 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
     : 'N/D';
 
   const baseMileage = typeof vehicle.currentMileage === 'number' ? vehicle.currentMileage : 0;
-  // Mostriamo i km totali arrotondati all'intero
+  // Chilometraggio totale aggiornato in tempo reale durante il tracking
   const displayMileage = isThisVehicleBeingTracked ? baseMileage + liveSessionDistance : baseMileage;
 
   const handleCardClick = () => {
@@ -162,14 +161,14 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
                 {isThisVehicleBeingTracked && (
                     <div className="mt-3 grid grid-cols-2 gap-2 p-3 bg-background/80 backdrop-blur rounded-md border border-destructive/20 animate-in slide-in-from-top-2 duration-300">
                         <div className="space-y-1">
-                            <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Distanza</p>
+                            <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Distanza Sessione</p>
                             <p className="flex items-center gap-1 text-sm font-black text-foreground">
                                 <Activity className="h-3 w-3 text-destructive" /> 
                                 {sessionDistance.toFixed(2)} km
                             </p>
                         </div>
                         <div className="space-y-1 border-l pl-3">
-                            <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Tempo</p>
+                            <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Tempo Sessione</p>
                             <p className="flex items-center gap-1 text-sm font-black text-foreground">
                                 <Timer className="h-3 w-3 text-destructive" /> 
                                 {formatDuration(sessionDuration)}
