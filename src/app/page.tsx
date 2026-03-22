@@ -62,10 +62,10 @@ export default function LandingPage() {
           <div className="container mx-auto px-4">
             <div className="mb-12 text-center">
               <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl">
-                Tutto per la tua auto
+                Cura intelligente del tuo veicolo
               </h2>
               <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
-                Funzionalità pensate per chi ama prendersi cura del proprio veicolo.
+                Tutto ciò che serve per una manutenzione senza pensieri e una guida consapevole.
               </p>
             </div>
             <div className="grid gap-8 md:grid-cols-3">
