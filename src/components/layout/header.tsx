@@ -7,6 +7,7 @@ import {
   Bell,
   Clock,
   Gauge,
+  Activity,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -29,6 +30,7 @@ import { useFirebase, useCollection } from "@/firebase"
 import { useMemo } from "react"
 import { collection, query, where } from "firebase/firestore"
 import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
 
 const UserMenu = () => {
     const { user } = useUser();
@@ -84,8 +86,10 @@ const UserMenu = () => {
 )}
 
 function TrackingIndicator() {
-    const { isTracking, trackedVehicle, sessionDistance, sessionDuration } = useTracking();
-    if (!isTracking || !trackedVehicle) return null;
+    const { isTracking, trackedVehicle, sessionDistance, sessionDuration, trackedVehicleId } = useTracking();
+    
+    // Se il tracking è attivo ma l'oggetto veicolo non è ancora caricato, mostriamo comunque uno stato di "Attesa"
+    if (!isTracking || !trackedVehicleId) return null;
 
     const formatDuration = (totalSeconds: number) => {
         const h = Math.floor(totalSeconds / 3600);
@@ -96,17 +100,22 @@ function TrackingIndicator() {
         return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     };
 
+    const vehicleName = trackedVehicle?.name || "Veicolo...";
+
     return (
-        <div className="flex items-center gap-2 rounded-full bg-destructive px-3 py-1 text-[10px] font-bold text-destructive-foreground transition-all">
-            <div className="h-2 w-2 rounded-full bg-white animate-pulse" />
-            <span className="hidden md:inline uppercase">GPS Attivo:</span>
-            <span className="max-w-[80px] truncate sm:max-w-none">{trackedVehicle.name}</span>
-            <div className="flex items-center gap-3 border-l border-white/30 ml-1 pl-2">
+        <div className="flex items-center gap-2 rounded-full bg-destructive px-3 py-1.5 text-[10px] font-black text-destructive-foreground transition-all animate-in fade-in zoom-in duration-300 shadow-lg shadow-destructive/20">
+            <div className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+            </div>
+            <span className="hidden sm:inline uppercase tracking-tighter">GPS ATTIVO:</span>
+            <span className="max-w-[80px] truncate sm:max-w-none">{vehicleName}</span>
+            <div className="flex items-center gap-2 border-l border-white/30 ml-1 pl-2">
                 <span className="flex items-center gap-1 tabular-nums">
                     <Clock className="h-3 w-3" /> {formatDuration(sessionDuration)}
                 </span>
                 <span className="flex items-center gap-1 tabular-nums">
-                    <Gauge className="h-3 w-3" /> {sessionDistance.toFixed(2)} km
+                    <Activity className="h-3 w-3" /> {sessionDistance.toFixed(2)} km
                 </span>
             </div>
         </div>
@@ -146,7 +155,7 @@ function NotificationBell() {
 
 export function Header() {
     return (
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 md:px-6">
             <div className="flex items-center gap-2">
                 <Link href="/dashboard">
                     <Logo />

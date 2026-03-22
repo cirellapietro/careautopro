@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser } from '@/firebase/auth/use-user';
@@ -8,7 +9,7 @@ import type { Vehicle } from '@/lib/types';
 import { VehicleCard } from '@/components/dashboard/vehicle-card';
 import { SmartMileageSync } from '@/components/SmartMileageSync';
 import { AdsBanner } from '@/components/AdsBanner';
-import { Loader2, PlusCircle, Car, AlertTriangle } from 'lucide-react';
+import { Loader2, PlusCircle, Car, AlertTriangle, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,7 +18,7 @@ import { useTracking } from '@/contexts/tracking-context';
 export default function DashboardPage() {
   const { user, loading: userLoading } = useUser();
   const { firestore } = useFirebase();
-  const { trackedVehicleId } = useTracking();
+  const { trackedVehicleId, isTracking } = useTracking();
 
   const vehiclesQuery = useMemo(() => {
     if (!user || !firestore) return null;
@@ -29,17 +30,21 @@ export default function DashboardPage() {
 
   const { data: vehicles, isLoading: vehiclesLoading } = useCollection<Vehicle>(vehiclesQuery);
 
-  // Ordiniamo i veicoli: quello in tracking per primo
+  // Ordiniamo i veicoli: quello in tracking per primo, poi quelli con flag trackingGPS attivo nel DB
   const sortedVehicles = useMemo(() => {
     if (!vehicles) return [];
     return [...vehicles].sort((a, b) => {
-      if (a.id === trackedVehicleId) return -1;
-      if (b.id === trackedVehicleId) return 1;
+      // Priorità 1: ID tracciato localmente
+      if (isTracking) {
+          if (a.id === trackedVehicleId) return -1;
+          if (b.id === trackedVehicleId) return 1;
+      }
+      // Priorità 2: Flag nel database
       if (a.trackingGPS && !b.trackingGPS) return -1;
       if (b.trackingGPS && !a.trackingGPS) return 1;
       return 0;
     });
-  }, [vehicles, trackedVehicleId]);
+  }, [vehicles, trackedVehicleId, isTracking]);
 
   if (userLoading || vehiclesLoading) {
     return (
@@ -50,7 +55,7 @@ export default function DashboardPage() {
     );
   }
 
-  const activeVehicle = vehicles?.find(v => v.trackingGPS);
+  const activeVehicle = vehicles?.find(v => v.id === trackedVehicleId && isTracking) || vehicles?.find(v => v.trackingGPS);
 
   return (
     <div className="space-y-6">
@@ -68,7 +73,7 @@ export default function DashboardPage() {
         </Button>
       </header>
 
-      {activeVehicle && (
+      {activeVehicle && !isTracking && (
         <SmartMileageSync 
           vehicle={activeVehicle} 
           onConfirm={(km) => console.log("KM confermati:", km)} 
@@ -76,9 +81,16 @@ export default function DashboardPage() {
       )}
 
       <div className="grid gap-6">
-        <div className="flex items-center gap-2">
-          <Car className="h-5 w-5 text-primary" />
-          <h2 className="font-headline text-xl font-bold uppercase tracking-tight">I Tuoi Mezzi</h2>
+        <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+                <Car className="h-5 w-5 text-primary" />
+                <h2 className="font-headline text-xl font-bold uppercase tracking-tight">I Tuoi Mezzi</h2>
+            </div>
+            {isTracking && (
+                <Badge variant="destructive" className="animate-pulse gap-1">
+                    <Activity className="h-3 w-3" /> TRACKING GPS ATTIVO
+                </Badge>
+            )}
         </div>
 
         {!sortedVehicles || sortedVehicles.length === 0 ? (

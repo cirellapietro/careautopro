@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useMemo, useRef } from 'react';
@@ -96,7 +97,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
         }
     }, [user?.uid]);
 
-    // PERSISTENZA CLOUD
+    // PERSISTENZA CLOUD E RECOVERY
     useEffect(() => {
         if (user?.uid && vehicles && permissionStatus === 'granted' && !isTracking) {
             const vehicleToTrack = vehicles.find(v => v.trackingGPS === true);
@@ -123,7 +124,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
         });
     }, [user, firestore]);
 
-    // MOTORE DI CALCOLO
+    // MOTORE DI CALCOLO GPS
     useEffect(() => {
         if (!isTracking || !trackedVehicleId || permissionStatus !== 'granted') {
             if (watchIdRef.current !== null) {
@@ -154,7 +155,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
 
         watchIdRef.current = navigator.geolocation.watchPosition(
             (position) => {
-                // Filtro qualità più permissivo (100m invece di 60m)
+                // Filtro qualità: accettiamo fino a 100m di accuratezza
                 if (position.coords.accuracy > 100) return;
 
                 if (!lastPositionRef.current) {
@@ -169,7 +170,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
                     position.coords.longitude
                 );
                 
-                // Filtro rumore GPS: 3 metri
+                // Filtro rumore GPS: 3 metri minimi per contare il movimento
                 if (d > 0.003) { 
                     distanceRef.current += d;
                     setSessionDistance(distanceRef.current);
@@ -179,7 +180,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
                     }
 
                     const unsyncedDistance = distanceRef.current - syncedDistanceRef.current;
-                    // Sincronizza ogni 200 metri
+                    // Sincronizza ogni 200 metri per risparmiare scritture ma essere reattivi
                     if (unsyncedDistance >= 0.2) {
                         syncMileageToDb(trackedVehicleId, unsyncedDistance);
                         syncedDistanceRef.current = distanceRef.current;
@@ -248,10 +249,11 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
         }
 
         const vehicleRef = doc(firestore, `users/${user.uid}/vehicles`, idToTrack);
-        updateDoc(vehicleRef, { trackingGPS: true });
+        updateDoc(vehicleRef, { trackingGPS: true }).catch(e => console.error(e));
 
         setTrackedVehicleId(idToTrack);
         setIsTracking(true);
+        toast({ title: 'Tracking avviato', description: 'Il GPS monitorerà il tuo percorso.' });
     }, [permissionStatus, trackedVehicleId, user, firestore, setTrackedVehicleId, toast]);
 
     const stopTracking = useCallback(async () => {
@@ -320,7 +322,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
             resetTrackingState();
             setIsStopping(false);
         }
-    }, [user, firestore, trackedVehicleId, toast, resetTrackingState, syncedDistanceRef]);
+    }, [user, firestore, trackedVehicleId, toast, resetTrackingState]);
 
     const switchTrackingTo = useCallback(async (newVehicleId: string) => {
         if (isTracking) {
