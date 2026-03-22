@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -10,10 +11,12 @@ import { AddVehicleForm } from '@/components/dashboard/add-vehicle-form';
 import { Button } from '@/components/ui/button';
 import { Loader2, PlusCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTracking } from '@/contexts/tracking-context';
 
 export default function VehiclesPage() {
   const { user } = useUser();
   const { firestore } = useFirebase();
+  const { isTracking, trackedVehicleId } = useTracking();
   const [isAddVehicleFormOpen, setAddVehicleFormOpen] = useState(false);
 
   const vehiclesQuery = useMemo(() => {
@@ -22,6 +25,18 @@ export default function VehiclesPage() {
   }, [user, firestore]);
 
   const { data: vehicles, isLoading } = useCollection<Vehicle>(vehiclesQuery);
+
+  const sortedVehicles = useMemo(() => {
+    if (!vehicles) return [];
+    return [...vehicles].sort((a, b) => {
+      const aIsActive = (isTracking && a.id === trackedVehicleId) || a.trackingGPS;
+      const bIsActive = (isTracking && b.id === trackedVehicleId) || b.trackingGPS;
+
+      if (aIsActive && !bIsActive) return -1;
+      if (!aIsActive && bIsActive) return 1;
+      return 0;
+    });
+  }, [vehicles, isTracking, trackedVehicleId]);
 
   if (isLoading) {
     return (
@@ -46,9 +61,9 @@ export default function VehiclesPage() {
           </Button>
         </div>
 
-        {vehicles && vehicles.length > 0 ? (
+        {sortedVehicles && sortedVehicles.length > 0 ? (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {vehicles.map((vehicle) => (
+            {sortedVehicles.map((vehicle) => (
               <VehicleCard key={vehicle.id} vehicle={vehicle} />
             ))}
           </div>

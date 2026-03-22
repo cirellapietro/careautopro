@@ -13,6 +13,7 @@ import { Loader2, PlusCircle, Car, AlertTriangle, Activity } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { useTracking } from '@/contexts/tracking-context';
 
 export default function DashboardPage() {
@@ -30,18 +31,15 @@ export default function DashboardPage() {
 
   const { data: vehicles, isLoading: vehiclesLoading } = useCollection<Vehicle>(vehiclesQuery);
 
-  // Ordiniamo i veicoli: quello in tracking per primo, poi quelli con flag trackingGPS attivo nel DB
+  // Ordiniamo i veicoli: quello in tracking per primo in assoluto
   const sortedVehicles = useMemo(() => {
     if (!vehicles) return [];
     return [...vehicles].sort((a, b) => {
-      // Priorità 1: ID tracciato localmente
-      if (isTracking) {
-          if (a.id === trackedVehicleId) return -1;
-          if (b.id === trackedVehicleId) return 1;
-      }
-      // Priorità 2: Flag nel database
-      if (a.trackingGPS && !b.trackingGPS) return -1;
-      if (b.trackingGPS && !a.trackingGPS) return 1;
+      const aIsActive = (isTracking && a.id === trackedVehicleId) || a.trackingGPS;
+      const bIsActive = (isTracking && b.id === trackedVehicleId) || b.trackingGPS;
+
+      if (aIsActive && !bIsActive) return -1;
+      if (!aIsActive && bIsActive) return 1;
       return 0;
     });
   }, [vehicles, trackedVehicleId, isTracking]);
@@ -55,7 +53,7 @@ export default function DashboardPage() {
     );
   }
 
-  const activeVehicle = vehicles?.find(v => v.id === trackedVehicleId && isTracking) || vehicles?.find(v => v.trackingGPS);
+  const activeVehicle = vehicles?.find(v => (v.id === trackedVehicleId && isTracking) || v.trackingGPS);
 
   return (
     <div className="space-y-6">
@@ -86,7 +84,7 @@ export default function DashboardPage() {
                 <Car className="h-5 w-5 text-primary" />
                 <h2 className="font-headline text-xl font-bold uppercase tracking-tight">I Tuoi Mezzi</h2>
             </div>
-            {isTracking && (
+            {(isTracking || activeVehicle?.trackingGPS) && (
                 <Badge variant="destructive" className="animate-pulse gap-1">
                     <Activity className="h-3 w-3" /> TRACKING GPS ATTIVO
                 </Badge>
