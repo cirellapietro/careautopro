@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, Suspense, useState } from 'react';
@@ -234,7 +235,8 @@ function VehicleDetailContent() {
     ? format(new Date(vehicle.lastMaintenanceDate), 'dd MMMM yyyy', { locale: it })
     : 'N/D';
     
-  const currentMileageFormatted = (typeof vehicle.currentMileage === 'number' ? vehicle.currentMileage : 0).toLocaleString('it-IT');
+  // Arrotondiamo il chilometraggio all'intero anche nella vista di dettaglio
+  const currentMileageFormatted = Math.round(typeof vehicle.currentMileage === 'number' ? vehicle.currentMileage : 0).toLocaleString('it-IT');
 
   const scrollToAdvisor = () => {
     const element = document.getElementById('ai-advisor');

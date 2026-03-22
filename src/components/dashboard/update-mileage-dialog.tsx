@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -55,7 +56,11 @@ export function UpdateMileageDialog({ open, onOpenChange, vehicles }: UpdateMile
   useEffect(() => {
     if (vehicles) {
         form.reset({
-            vehicles: vehicles.map(v => ({ id: v.id, name: v.name, currentMileage: v.currentMileage }))
+            vehicles: vehicles.map(v => ({ 
+                id: v.id, 
+                name: v.name, 
+                currentMileage: Math.round(v.currentMileage || 0) 
+            }))
         })
     }
   }, [vehicles, open, form.reset]);
@@ -72,7 +77,8 @@ export function UpdateMileageDialog({ open, onOpenChange, vehicles }: UpdateMile
     const batch = writeBatch(firestore);
     data.vehicles.forEach(vehicle => {
       const vehicleRef = doc(firestore, `users/${user.uid}/vehicles`, vehicle.id);
-      batch.update(vehicleRef, { currentMileage: vehicle.currentMileage });
+      // Arrotondiamo anche prima del salvataggio per pulire il database
+      batch.update(vehicleRef, { currentMileage: Math.round(vehicle.currentMileage) });
     });
 
     batch.commit()
@@ -107,7 +113,7 @@ export function UpdateMileageDialog({ open, onOpenChange, vehicles }: UpdateMile
         <DialogHeader>
           <DialogTitle>Aggiorna Chilometraggio</DialogTitle>
           <DialogDescription>
-            Non stai tracciando nessun veicolo. Per fornirti statistiche accurate, per favore inserisci il chilometraggio attuale dei tuoi veicoli.
+            Inserisci il chilometraggio attuale indicato sul tachimetro dei tuoi veicoli per calcolare correttamente le scadenze.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>

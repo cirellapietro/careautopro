@@ -59,7 +59,7 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
     : 'N/D';
 
   const baseMileage = typeof vehicle.currentMileage === 'number' ? vehicle.currentMileage : 0;
-  // Visualizziamo i km totali (base + sessione live)
+  // Visualizziamo i km totali arrotondati all'intero come richiesto
   const displayMileage = isThisVehicleBeingTracked ? baseMileage + liveSessionDistance : baseMileage;
 
   const handleCardClick = () => {
@@ -145,7 +145,7 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
                         "font-bold text-xl tabular-nums", 
                         isThisVehicleBeingTracked ? "text-destructive animate-pulse" : "text-foreground"
                     )}>
-                        {displayMileage.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} km
+                        {Math.round(displayMileage).toLocaleString('it-IT')} km
                     </span>
                 </div>
                 
