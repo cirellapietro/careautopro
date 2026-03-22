@@ -12,10 +12,12 @@ import { Loader2, PlusCircle, Car, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTracking } from '@/contexts/tracking-context';
 
 export default function DashboardPage() {
   const { user, loading: userLoading } = useUser();
   const { firestore } = useFirebase();
+  const { trackedVehicleId } = useTracking();
 
   const vehiclesQuery = useMemo(() => {
     if (!user || !firestore) return null;
@@ -26,6 +28,18 @@ export default function DashboardPage() {
   }, [user, firestore]);
 
   const { data: vehicles, isLoading: vehiclesLoading } = useCollection<Vehicle>(vehiclesQuery);
+
+  // Ordiniamo i veicoli: quello in tracking per primo
+  const sortedVehicles = useMemo(() => {
+    if (!vehicles) return [];
+    return [...vehicles].sort((a, b) => {
+      if (a.id === trackedVehicleId) return -1;
+      if (b.id === trackedVehicleId) return 1;
+      if (a.trackingGPS && !b.trackingGPS) return -1;
+      if (b.trackingGPS && !a.trackingGPS) return 1;
+      return 0;
+    });
+  }, [vehicles, trackedVehicleId]);
 
   if (userLoading || vehiclesLoading) {
     return (
@@ -67,7 +81,7 @@ export default function DashboardPage() {
           <h2 className="font-headline text-xl font-bold uppercase tracking-tight">I Tuoi Mezzi</h2>
         </div>
 
-        {!vehicles || vehicles.length === 0 ? (
+        {!sortedVehicles || sortedVehicles.length === 0 ? (
           <Card className="border-dashed py-12">
             <CardContent className="flex flex-col items-center text-center">
               <div className="bg-muted p-4 rounded-full mb-4">
@@ -84,7 +98,7 @@ export default function DashboardPage() {
           </Card>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {vehicles.map((vehicle) => (
+            {sortedVehicles.map((vehicle) => (
               <VehicleCard key={vehicle.id} vehicle={vehicle} />
             ))}
           </div>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useMemo, useRef } from 'react';
@@ -58,7 +57,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
     }, [user, firestore]);
     const { data: vehicles } = useCollection<Vehicle>(vehiclesQuery);
     
-    // CARICAMENTO INIZIALE: Ripristina lo stato dal localStorage per resilienza ai refresh
+    // CARICAMENTO INIZIALE
     useEffect(() => {
         if (user?.uid) {
             const userId = user.uid;
@@ -97,7 +96,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
         }
     }, [user?.uid]);
 
-    // PERSISTENZA CLOUD: Rileva se il DB ha il tracciamento attivo (es. attivato da altro device)
+    // PERSISTENZA CLOUD
     useEffect(() => {
         if (user?.uid && vehicles && permissionStatus === 'granted' && !isTracking) {
             const vehicleToTrack = vehicles.find(v => v.trackingGPS === true);
@@ -124,7 +123,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
         });
     }, [user, firestore]);
 
-    // MOTORE DI CALCOLO: Geolocation e Cronometro
+    // MOTORE DI CALCOLO
     useEffect(() => {
         if (!isTracking || !trackedVehicleId || permissionStatus !== 'granted') {
             if (watchIdRef.current !== null) {
@@ -155,8 +154,8 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
 
         watchIdRef.current = navigator.geolocation.watchPosition(
             (position) => {
-                // Filtro qualità: ignora letture con precisione peggiore di 60 metri
-                if (position.coords.accuracy > 60) return;
+                // Filtro qualità più permissivo (100m invece di 60m)
+                if (position.coords.accuracy > 100) return;
 
                 if (!lastPositionRef.current) {
                     lastPositionRef.current = position.coords;
@@ -170,9 +169,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
                     position.coords.longitude
                 );
                 
-                // Filtro rumore GPS: minimo 3 metri di spostamento per accumulare
-                // CRITICO: Aggiorniamo lastPositionRef SOLO se lo spostamento è contato,
-                // così i piccoli spostamenti si sommano nel tempo.
+                // Filtro rumore GPS: 3 metri
                 if (d > 0.003) { 
                     distanceRef.current += d;
                     setSessionDistance(distanceRef.current);
@@ -189,7 +186,6 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
                         setSyncedDistance(syncedDistanceRef.current);
                     }
 
-                    // Aggiorna il punto di riferimento solo dopo un calcolo valido
                     lastPositionRef.current = position.coords;
                 }
             },

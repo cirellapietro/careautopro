@@ -1,4 +1,3 @@
-
 'use client';
 
 import { type Vehicle } from '@/lib/types';
@@ -43,8 +42,9 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
     isStopping,
     permissionStatus,
     switchTrackingTo,
-    liveSessionDistance,
+    sessionDistance,
     sessionDuration,
+    liveSessionDistance,
   } = useTracking();
 
   const isThisVehicleBeingTracked = trackedVehicleId === vehicle.id && isTracking;
@@ -59,7 +59,7 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
     : 'N/D';
 
   const baseMileage = typeof vehicle.currentMileage === 'number' ? vehicle.currentMileage : 0;
-  // Visualizziamo i km totali arrotondati all'intero come richiesto
+  // Mostriamo i km totali arrotondati
   const displayMileage = isThisVehicleBeingTracked ? baseMileage + liveSessionDistance : baseMileage;
 
   const handleCardClick = () => {
@@ -155,7 +155,7 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
                             <p className="text-[10px] uppercase font-bold text-muted-foreground">Sessione</p>
                             <p className="flex items-center gap-1 text-sm font-black text-foreground">
                                 <Gauge className="h-3 w-3 text-destructive" /> 
-                                {liveSessionDistance.toFixed(2)} km
+                                {sessionDistance.toFixed(2)} km
                             </p>
                         </div>
                         <div className="space-y-1 border-l pl-2">
