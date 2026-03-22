@@ -92,6 +92,12 @@ export default function SignupForm() {
       router.push("/dashboard");
     } catch (e: any) {
       const errorCode = e.code || "";
+      // Gestiamo il caso in cui l'utente chiude il popup di Google
+      if (errorCode === 'auth/popup-closed-by-user') {
+        setIsGoogleLoading(false);
+        return;
+      }
+
       if (errorCode === 'auth/operation-not-allowed') {
         setError("L'accesso con Google deve essere abilitato nella Console Firebase (Authentication > Sign-in method).");
         setIsConfigError(true);
