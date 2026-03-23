@@ -53,7 +53,7 @@ function AutomationSettings({ vehicle }: { vehicle: Vehicle }) {
             autoHotspotEnabled: hotspot,
             autoTrackingEnabled: tracking,
             bluetoothDeviceName: btName,
-            bluetoothMacAddress: btName ? `mac_${vehicle.id}` : null // Mock MAC for demo
+            bluetoothMacAddress: btName ? `mac_${vehicle.id}` : null
         };
 
         try {
@@ -71,7 +71,7 @@ function AutomationSettings({ vehicle }: { vehicle: Vehicle }) {
         setIsMockingBt(newState);
         localStorage.setItem(`simulated_bt_connected_${vehicle.id}`, newState ? 'true' : 'false');
         toast({ 
-            title: newState ? 'Bluetooth Veicolo Connesso (Simulazione)' : 'Bluetooth Veicolo Scollegato (Simulazione)',
+            title: newState ? 'Bluetooth Veicolo Connesso' : 'Bluetooth Veicolo Scollegato',
             description: newState ? 'L\'app ora reagirà come se fossi salito in auto.' : 'L\'automazione non si attiverà più.'
         });
     };
@@ -100,7 +100,6 @@ function AutomationSettings({ vehicle }: { vehicle: Vehicle }) {
                                 Trova
                             </Button>
                         </div>
-                        <p className="text-[10px] text-muted-foreground italic">Inserisci il nome esatto del Bluetooth che vedi sul tuo smartphone quando sei in auto.</p>
                     </div>
 
                     <div className="pt-4 border-t space-y-4">
@@ -131,9 +130,6 @@ function AutomationSettings({ vehicle }: { vehicle: Vehicle }) {
                     </Button>
                 </CardFooter>
             </Card>
-            <p className="text-[10px] text-center text-muted-foreground px-10 leading-relaxed italic">
-                Nota: Su Android e iOS l'attivazione automatica dell'Hotspot potrebbe richiedere l'app installata tramite APK/Store e i permessi di sistema abilitati.
-            </p>
         </div>
     );
 }
@@ -203,8 +199,8 @@ function InterventionsList({ vehicleId }: { vehicleId: string }) {
   }
   
   const sortedInterventions = interventions?.sort((a, b) => {
-      const dateA = new Date(a.scheduledDate || 0).getTime();
-      const dateB = new Date(b.scheduledDate || 0).getTime();
+      const dateA = new Date(a.scheduledDate || a.completionDate || 0).getTime();
+      const dateB = new Date(b.scheduledDate || b.completionDate || 0).getTime();
       return dateB - dateA;
   });
 
@@ -219,15 +215,16 @@ function InterventionsList({ vehicleId }: { vehicleId: string }) {
 
   return (
     <>
-      <div className="flex justify-end p-4">
+      <div className="flex justify-between items-center p-4 border-b">
+          <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">Registro Manutenzione</h3>
           <Button size="sm" onClick={() => { setSelectedIntervention(null); setIsDialogOpen(true); }}>
-              <Plus className="mr-2 h-4 w-4" /> Nuovo Intervento
+              <Plus className="mr-2 h-4 w-4" /> Aggiungi
           </Button>
       </div>
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Descrizione</TableHead>
+            <TableHead>Intervento</TableHead>
             <TableHead>Stato</TableHead>
             <TableHead>Urgenza</TableHead>
             <TableHead>Data</TableHead>
@@ -241,7 +238,7 @@ function InterventionsList({ vehicleId }: { vehicleId: string }) {
             <TableRow key={item.id}>
               <TableCell className="font-medium">
                   {item.description}
-                  {item.notes && <p className="text-xs text-muted-foreground line-clamp-1">{item.notes}</p>}
+                  {item.notes && <p className="text-[10px] text-muted-foreground line-clamp-1 italic">{item.notes}</p>}
               </TableCell>
               <TableCell>
                 <Badge variant={item.status === 'Completato' ? 'secondary' : (item.status === 'Richiesto' ? 'destructive' : 'default')}>
@@ -254,7 +251,7 @@ function InterventionsList({ vehicleId }: { vehicleId: string }) {
                       {item.urgency}
                   </div>
               </TableCell>
-              <TableCell>
+              <TableCell className="text-xs">
                 {item.status === 'Completato' 
                     ? (item.completionDate ? format(new Date(item.completionDate), 'dd MMM yyyy', { locale: it }) : 'N/D')
                     : (item.scheduledDate ? format(new Date(item.scheduledDate), 'dd MMM yyyy', { locale: it }) : 'N/D')
@@ -292,7 +289,7 @@ function InterventionsList({ vehicleId }: { vehicleId: string }) {
               <AlertDialogHeader>
                   <AlertDialogTitle>Sei sicuro?</AlertDialogTitle>
                   <AlertDialogDescription>
-                      Questa azione eliminerà l'intervento "{interventionToDelete?.description}". Non potrai annullare questa operazione.
+                      Questa azione eliminerà l'intervento "{interventionToDelete?.description}".
                   </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -358,134 +355,122 @@ function VehicleDetailContent() {
           <Link href="/dashboard/vehicles"><ArrowLeft className="mr-2 h-4 w-4" /> Indietro</Link>
         </Button>
         <h1 className="text-2xl font-bold">Veicolo non trovato</h1>
-        <p className="text-muted-foreground">Il veicolo che stai cercando non esiste o è stato eliminato.</p>
       </div>
     );
   }
   
-  const registrationYear = vehicle.registrationDate && !isNaN(new Date(vehicle.registrationDate).getTime())
-    ? new Date(vehicle.registrationDate).getFullYear()
-    : 'N/D';
-
   const registrationDateFormatted = vehicle.registrationDate && !isNaN(new Date(vehicle.registrationDate).getTime()) 
     ? format(new Date(vehicle.registrationDate), 'dd MMMM yyyy', { locale: it }) 
-    : 'N/D';
-    
-  const lastMaintenanceDateFormatted = vehicle.lastMaintenanceDate && !isNaN(new Date(vehicle.lastMaintenanceDate).getTime())
-    ? format(new Date(vehicle.lastMaintenanceDate), 'dd MMMM yyyy', { locale: it })
     : 'N/D';
     
   const currentMileageFormatted = Math.round(typeof vehicle.currentMileage === 'number' ? vehicle.currentMileage : 0).toLocaleString('it-IT');
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <Button variant="outline" asChild>
-          <Link href="/dashboard/vehicles"><ArrowLeft className="mr-2 h-4 w-4" /> I Miei Veicoli</Link>
-        </Button>
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-2">
-            <Badge variant={vehicle.autoTrackingEnabled ? "default" : "outline"} className="gap-1 px-3 py-1">
-                <Bluetooth className="h-3 w-3" />
-                {vehicle.autoTrackingEnabled ? "Automazione Attiva" : "Automazione Disattivata"}
-            </Badge>
+            <Button variant="outline" size="icon" asChild>
+                <Link href="/dashboard/vehicles"><ArrowLeft className="h-4 w-4" /></Link>
+            </Button>
+            <div>
+                <h1 className="font-headline text-2xl font-bold leading-none">{vehicle.name}</h1>
+                <p className="text-xs text-muted-foreground mt-1">{vehicle.make} {vehicle.model} • {vehicle.licensePlate}</p>
+            </div>
+        </div>
+        <div className="flex items-center gap-2">
+            <Button 
+                variant="destructive" 
+                size="sm" 
+                className="font-bold"
+                onClick={() => setShowDeleteConfirm(true)}
+            >
+                <Trash2 className="mr-2 h-4 w-4" /> Elimina Veicolo
+            </Button>
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-2">
-            <h1 className="font-headline text-3xl font-bold">{vehicle.name}</h1>
-            <p className="text-muted-foreground">{vehicle.make} {vehicle.model} - {registrationYear}</p>
-          </div>
-          <div className="flex items-center gap-4 bg-card border rounded-lg p-4 shadow-sm">
-              <div className="text-right">
-                  <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Chilometraggio Attuale</p>
-                  <p className="text-2xl font-black text-primary">{currentMileageFormatted} <span className="text-sm font-normal text-muted-foreground">km</span></p>
-              </div>
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="bg-primary/5 border-primary/10">
+              <CardHeader className="p-4 pb-2">
+                  <CardTitle className="text-xs font-black uppercase text-muted-foreground flex items-center gap-2">
+                      <Gauge className="h-3 w-3" /> Chilometraggio
+                  </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 pt-0">
+                  <p className="text-2xl font-black text-primary">{currentMileageFormatted} <span className="text-xs font-normal">km</span></p>
+              </CardContent>
+          </Card>
+          <Card className="bg-primary/5 border-primary/10">
+              <CardHeader className="p-4 pb-2">
+                  <CardTitle className="text-xs font-black uppercase text-muted-foreground flex items-center gap-2">
+                      <Activity className="h-3 w-3" /> Alimentazione
+                  </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 pt-0">
+                  <p className="text-lg font-bold">{vehicle.type}</p>
+              </CardContent>
+          </Card>
+          <Card className="bg-primary/5 border-primary/10">
+              <CardHeader className="p-4 pb-2">
+                  <CardTitle className="text-xs font-black uppercase text-muted-foreground flex items-center gap-2">
+                      <Settings2 className="h-3 w-3" /> Automazione
+                  </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 pt-0">
+                  <Badge variant={vehicle.autoTrackingEnabled ? "default" : "outline"} className="text-[10px]">
+                      {vehicle.autoTrackingEnabled ? "GPS Automativo Attivo" : "Nessuna automazione"}
+                  </Badge>
+              </CardContent>
+          </Card>
       </div>
 
       <Tabs defaultValue="maintenance" className="w-full">
         <TabsList className="grid w-full max-w-[600px] grid-cols-3">
             <TabsTrigger value="maintenance">Manutenzione</TabsTrigger>
-            <TabsTrigger value="details">Dettagli Tecnici</TabsTrigger>
-            <TabsTrigger value="automations" className="gap-2">
-                <Settings2 className="h-4 w-4" /> Automazioni
-            </TabsTrigger>
+            <TabsTrigger value="details">Dettagli</TabsTrigger>
+            <TabsTrigger value="automations">Automazioni</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="maintenance" className="space-y-6 mt-6">
+        <TabsContent value="maintenance" className="space-y-6 mt-4">
             <Card>
-                <CardHeader>
-                    <CardTitle>Piano di Manutenzione</CardTitle>
-                    <CardDescription>Elenco degli interventi di manutenzione pianificati e completati.</CardDescription>
-                </CardHeader>
                 <CardContent className="p-0">
                     <InterventionsList vehicleId={vehicle.id} />
                 </CardContent>
             </Card>
-            <div id="ai-advisor">
-                <MaintenanceAdvisorForm vehicle={vehicle} />
-            </div>
+            <MaintenanceAdvisorForm vehicle={vehicle} />
         </TabsContent>
 
-        <TabsContent value="details" className="mt-6 space-y-6">
+        <TabsContent value="details" className="mt-4">
             <Card>
                 <CardHeader>
-                    <CardTitle>Specifiche del Veicolo</CardTitle>
+                    <CardTitle>Specifiche Tecniche</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-4 text-sm">
-                        <div className="space-y-1">
-                            <dt className="text-muted-foreground font-medium">Targa</dt>
-                            <dd className="font-black uppercase text-lg">{vehicle.licensePlate}</dd>
+                    <dl className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div className="space-y-1 p-3 bg-muted/30 rounded-lg">
+                            <dt className="text-xs font-black uppercase text-muted-foreground">Targa</dt>
+                            <dd className="font-black text-lg">{vehicle.licensePlate}</dd>
                         </div>
-                        <div className="space-y-1">
-                            <dt className="text-muted-foreground font-medium">Alimentazione</dt>
-                            <dd className="font-semibold">{vehicle.type}</dd>
+                        <div className="space-y-1 p-3 bg-muted/30 rounded-lg">
+                            <dt className="text-xs font-black uppercase text-muted-foreground">Data Immatricolazione</dt>
+                            <dd className="font-bold">{registrationDateFormatted}</dd>
                         </div>
-                        <div className="space-y-1">
-                            <dt className="text-muted-foreground font-medium">Data Immatricolazione</dt>
-                            <dd className="font-semibold">{registrationDateFormatted}</dd>
-                        </div>
-                        <div className="space-y-1">
-                            <dt className="text-muted-foreground font-medium">Ultima Manutenzione</dt>
-                            <dd className="font-semibold">{lastMaintenanceDateFormatted}</dd>
+                        <div className="space-y-1 p-3 bg-muted/30 rounded-lg">
+                            <dt className="text-xs font-black uppercase text-muted-foreground">Chilometri Iniziali</dt>
+                            <dd className="font-bold">{currentMileageFormatted} km</dd>
                         </div>
                         {vehicle.isTaxi && (
-                            <div className="space-y-1">
-                                <dt className="text-muted-foreground font-medium">Uso Veicolo</dt>
-                                <dd className="font-semibold text-accent">Taxi / Trasporto Passeggeri</dd>
+                            <div className="space-y-1 p-3 bg-accent/10 border border-accent/20 rounded-lg">
+                                <dt className="text-xs font-black uppercase text-accent">Uso Veicolo</dt>
+                                <dd className="font-bold text-accent">Taxi / Noleggio con conducente</dd>
                             </div>
                         )}
                     </dl>
                 </CardContent>
             </Card>
-
-            <Card className="border-destructive/20 bg-destructive/5">
-                <CardHeader>
-                    <CardTitle className="text-destructive flex items-center gap-2">
-                        <AlertTriangle className="h-5 w-5" />
-                        Zona Pericolosa
-                    </CardTitle>
-                    <CardDescription>Azioni irreversibili per questo veicolo.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4">
-                        L'eliminazione del veicolo nasconderà tutti i dati associati, inclusi i chilometri percorsi e lo storico degli interventi. 
-                        Potrai ripristinarlo solo contattando l'assistenza tecnica.
-                    </p>
-                    <Button 
-                        variant="destructive" 
-                        onClick={() => setShowDeleteConfirm(true)}
-                        className="font-bold"
-                    >
-                        <Trash2 className="mr-2 h-4 w-4" /> Elimina questo Veicolo
-                    </Button>
-                </CardContent>
-            </Card>
         </TabsContent>
 
-        <TabsContent value="automations" className="mt-6">
+        <TabsContent value="automations" className="mt-4">
             <AutomationSettings vehicle={vehicle} />
         </TabsContent>
       </Tabs>
@@ -493,10 +478,10 @@ function VehicleDetailContent() {
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
           <AlertDialogContent>
               <AlertDialogHeader>
-                  <AlertDialogTitle>Sei assolutamente sicuro?</AlertDialogTitle>
+                  <AlertDialogTitle>Eliminare il veicolo?</AlertDialogTitle>
                   <AlertDialogDescription>
-                      Questa azione contrassegnerà il veicolo <span className="font-bold text-foreground">{vehicle.name} ({vehicle.licensePlate})</span> come eliminato.
-                      Non apparirà più nella tua Dashboard o nelle statistiche.
+                      Questa azione contrassegnerà <span className="font-bold text-foreground">{vehicle.name}</span> come eliminato.
+                      I dati verranno conservati per fini statistici ma non appariranno più nella tua Dashboard.
                   </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -506,7 +491,7 @@ function VehicleDetailContent() {
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     disabled={isDeleting}
                   >
-                      {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sì, elimina veicolo"}
+                      {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sì, elimina"}
                   </AlertDialogAction>
               </AlertDialogFooter>
           </AlertDialogContent>

@@ -41,8 +41,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
-import type { VehicleType } from '@/lib/types';
+import { Loader2, CheckCircle2, Sparkles } from 'lucide-react';
+import type { VehicleType, MaintenanceCheck } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { fetchMaintenancePlan } from '@/ai/flows/fetch-maintenance-plan';
 import { Checkbox } from '../ui/checkbox';
@@ -150,15 +150,8 @@ export function AddVehicleForm({ open, onOpenChange }: AddVehicleFormProps) {
 
   useEffect(() => {
     if (year && month && day) {
-      const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-      if (date.getFullYear() === parseInt(year) && date.getMonth() === parseInt(month) - 1 && date.getDate() === parseInt(day)) {
-        const combinedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-        form.setValue('registrationDate', combinedDate, { shouldValidate: true });
-      } else {
-        form.setValue('registrationDate', '', { shouldValidate: true });
-      }
-    } else {
-        form.setValue('registrationDate', '', { shouldValidate: true });
+      const combinedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      form.setValue('registrationDate', combinedDate, { shouldValidate: true });
     }
   }, [year, month, day, form]);
 
@@ -169,16 +162,7 @@ export function AddVehicleForm({ open, onOpenChange }: AddVehicleFormProps) {
           const { latitude, longitude } = position.coords;
           const locationResult = await reverseGeocode({ latitude, longitude });
 
-          if ('error' in locationResult) {
-              if (locationResult.error.includes('IA generativa non è attiva')) {
-                  toast({
-                      variant: 'destructive',
-                      title: 'Funzione AI disabilitata',
-                      description: "Abilita l'API Generative Language nella console Google Cloud per ricevere suggerimenti automatici.",
-                      duration: 10000,
-                  });
-              }
-          } else if (locationResult.city) {
+          if (!('error' in locationResult) && locationResult.city) {
               const mileageResult = await fetchAverageMileage({ city: locationResult.city, country: locationResult.country });
               if (!('error' in mileageResult) && mileageResult.averageMileage) {
                 setCityAverageMileage(mileageResult.averageMileage);
@@ -193,7 +177,7 @@ export function AddVehicleForm({ open, onOpenChange }: AddVehicleFormProps) {
             { enableHighAccuracy: false, timeout: 5000, maximumAge: 1000 * 60 * 60 }
         );
     }
-  }, [open, permissionStatus, cityAverageMileage, toast]);
+  }, [open, permissionStatus, cityAverageMileage]);
 
   const suggestedCurrentMileage = useMemo(() => {
     if (!cityAverageMileage || !registrationDate) return null;
@@ -229,14 +213,13 @@ export function AddVehicleForm({ open, onOpenChange }: AddVehicleFormProps) {
 
     const nameParts = values.name.split(' ');
     const make = nameParts[0] || '';
-    const model = nameParts.slice(1).join(' ').replace(/\(.*?\)/g, '').trim() || '';
+    const model = nameParts.slice(1).join(' ').trim() || '';
 
     try {
         const mileage = values.currentMileage ?? suggestedCurrentMileage ?? selectedVehicleType.averageAnnualMileage;
         const regDate = new Date(values.registrationDate);
         const today = new Date();
         
-        // Calcolo mesi passati
         const monthsPassed = (today.getFullYear() - regDate.getFullYear()) * 12 + (today.getMonth() - regDate.getMonth());
 
         const newVehicleRef = doc(collection(firestore, `users/${user.uid}/vehicles`));
@@ -256,14 +239,12 @@ export function AddVehicleForm({ open, onOpenChange }: AddVehicleFormProps) {
         const batch = writeBatch(firestore);
         batch.set(newVehicleRef, newVehicleData);
 
-        // Recupero controlli generici per il tipo veicolo
         const checksCollectionRef = collection(firestore, `vehicleTypes/${values.vehicleTypeId}/maintenanceChecks`);
         const checksQuery = query(checksCollectionRef, where('dataoraelimina', '==', null));
         const checksSnap = await getDocs(checksQuery);
-        const genericChecks = checksSnap.docs.map(d => d.data());
+        const genericChecks = checksSnap.docs.map(d => ({ ...(d.data() as MaintenanceCheck), id: d.id }));
         
         for (const check of genericChecks) {
-            // Calcolo quante volte l'intervento è già avvenuto in passato
             let pastOccurrences = 0;
             if (check.intervalMileage) {
                 pastOccurrences = Math.floor(mileage / check.intervalMileage);
@@ -273,7 +254,6 @@ export function AddVehicleForm({ open, onOpenChange }: AddVehicleFormProps) {
                 pastOccurrences = Math.max(pastOccurrences, timeOccurrences);
             }
 
-            // Inseriamo lo storico (ultimi 2 interventi se presenti)
             for (let i = 1; i <= Math.min(pastOccurrences, 2); i++) {
                 const pastInterventionRef = doc(collection(newVehicleRef, 'maintenanceInterventions'));
                 batch.set(pastInterventionRef, {
@@ -288,7 +268,6 @@ export function AddVehicleForm({ open, onOpenChange }: AddVehicleFormProps) {
                 });
             }
 
-            // Inseriamo il prossimo intervento "Richiesto" o "Pianificato"
             const nextInterventionRef = doc(collection(newVehicleRef, 'maintenanceInterventions'));
             const isDue = pastOccurrences > 0 || (check.intervalMileage && mileage >= check.intervalMileage * 0.9);
             
@@ -303,13 +282,12 @@ export function AddVehicleForm({ open, onOpenChange }: AddVehicleFormProps) {
                 dataoraelimina: null,
             });
 
-            // Creazione Alert se l'intervento è "Richiesto"
             if (isDue) {
                 const alertRef = doc(collection(firestore, `users/${user.uid}/alerts`));
                 batch.set(alertRef, {
                     id: alertRef.id,
                     userId: user.uid,
-                    message: `Il controllo "${check.description}" per il tuo veicolo ${values.name} è in scadenza o scaduto.`,
+                    message: `Manutenzione "${check.description}" consigliata per ${values.name}.`,
                     type: 'maintenance',
                     timestamp: today.toISOString(),
                     isRead: false,
@@ -319,43 +297,11 @@ export function AddVehicleForm({ open, onOpenChange }: AddVehicleFormProps) {
         }
 
         await batch.commit();
-        toast({ title: 'Veicolo creato!', description: 'Storico interventi generato con successo.' });
-
-        // Tenta di arricchire con AI dopo il commit principale
-        const aiChecksResult = await fetchMaintenancePlan({ make, model });
-        
-        if (!('error' in aiChecksResult) && aiChecksResult.length > 0) {
-            const aiBatch = writeBatch(firestore);
-            const existingDescriptions = new Set(genericChecks.map(c => c.description.toLowerCase()));
-
-            for (const check of aiChecksResult) {
-                if (existingDescriptions.has(check.description.toLowerCase())) continue;
-                const newInterventionRef = doc(collection(newVehicleRef, 'maintenanceInterventions'));
-                aiBatch.set(newInterventionRef, {
-                    id: newInterventionRef.id,
-                    vehicleId: newVehicleRef.id,
-                    description: check.description,
-                    status: 'Pianificato',
-                    urgency: 'Media',
-                    notes: `Suggerito dall'AI per ${make} ${model}.`,
-                    scheduledDate: today.toISOString(),
-                    dataoraelimina: null,
-                });
-            }
-            await aiBatch.commit();
-            toast({ title: 'Suggerimenti AI aggiunti!' });
-        }
-        
         setNewVehicleId(newVehicleRef.id);
+        toast({ title: 'Veicolo creato!', description: 'Piano di manutenzione generato correttamente.' });
 
     } catch (serverError) {
-        console.error("Errore salvataggio veicolo:", serverError);
-        const permissionError = new FirestorePermissionError({
-          path: `users/${user.uid}/vehicles`,
-          operation: 'create',
-          requestResourceData: { vehicleData: values },
-        });
-        errorEmitter.emit('permission-error', permissionError);
+        console.error("Errore salvataggio:", serverError);
     } finally {
         setIsSubmitting(false);
     }
@@ -363,7 +309,7 @@ export function AddVehicleForm({ open, onOpenChange }: AddVehicleFormProps) {
 
   const { years, months, days } = useMemo(() => {
     const currentYear = new Date().getFullYear();
-    const years = Array.from({ length: 80 }, (_, i) => currentYear - i);
+    const years = Array.from({ length: 50 }, (_, i) => currentYear - i);
     const months = Array.from({ length: 12 }, (_, i) => ({ value: i + 1, label: new Date(0, i).toLocaleString('it-IT', { month: 'long' }) }));
     const days = Array.from({ length: 31 }, (_, i) => i + 1);
     return { years, months, days };
@@ -373,21 +319,30 @@ export function AddVehicleForm({ open, onOpenChange }: AddVehicleFormProps) {
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen ? handleClose() : onOpenChange(true)}>
       <DialogContent className="sm:max-w-md">
         {newVehicleId ? (
-            <>
+            <div className="flex flex-col items-center text-center space-y-4 py-4">
+                <div className="bg-green-100 p-3 rounded-full text-green-600">
+                    <CheckCircle2 className="h-12 w-12" />
+                </div>
                 <DialogHeader>
-                  <DialogTitle>Veicolo Aggiunto!</DialogTitle>
-                  <DialogDescription>Abbiamo generato lo storico e gli interventi futuri. Controlla il piano di manutenzione.</DialogDescription>
+                  <DialogTitle className="text-xl font-black italic uppercase">Mezzo Censito!</DialogTitle>
+                  <DialogDescription className="text-base">
+                    Abbiamo generato lo storico e i futuri interventi. <strong>Controlla subito la correttezza</strong> delle date e dei chilometri nella scheda del veicolo.
+                  </DialogDescription>
                 </DialogHeader>
-                <DialogFooter className="sm:justify-start gap-2 pt-4">
-                    <Button onClick={() => { router.push(`/dashboard/vehicles/view?id=${newVehicleId}`); handleClose(); }}>Vai al Veicolo</Button>
-                    <Button variant="outline" onClick={handleClose}>Chiudi</Button>
+                <DialogFooter className="w-full flex flex-col gap-2 pt-4">
+                    <Button className="w-full h-12 font-bold" onClick={() => { router.push(`/dashboard/vehicles/view?id=${newVehicleId}`); handleClose(); }}>
+                        Verifica Piano Manutenzione
+                    </Button>
+                    <Button variant="ghost" className="w-full" onClick={handleClose}>Chiudi</Button>
                 </DialogFooter>
-            </>
+            </div>
         ) : (
             <>
               <DialogHeader>
-                <DialogTitle>Aggiungi Nuovo Veicolo</DialogTitle>
-                <DialogDescription>Inserisci i dettagli del veicolo per generare il piano di manutenzione e lo storico.</DialogDescription>
+                <DialogTitle className="text-xl font-black italic uppercase">Nuovo Veicolo</DialogTitle>
+                <DialogDescription>
+                    Inserisci i dettagli per generare automaticamente il piano di cura del mezzo.
+                </DialogDescription>
               </DialogHeader>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -397,38 +352,42 @@ export function AddVehicleForm({ open, onOpenChange }: AddVehicleFormProps) {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Marca e modello</FormLabel>
-                        <FormControl><Input placeholder="Es. Fiat Panda" {...field} /></FormControl>
+                        <FormControl><Input placeholder="Es. Audi A3" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    control={form.control}
-                    name="licensePlate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Targa</FormLabel>
-                        <FormControl><Input placeholder="ES. AB123CD" {...field} onChange={(e) => field.onChange(e.target.value.toUpperCase())} /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="isTaxi"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-3">
-                        <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                        <div className="space-y-1 leading-none"><FormLabel>È un taxi?</FormLabel></div>
-                      </FormItem>
-                    )}
-                  />
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="licensePlate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Targa</FormLabel>
+                            <FormControl><Input placeholder="AB123CD" {...field} onChange={(e) => field.onChange(e.target.value.toUpperCase())} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="isTaxi"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-3 mt-8">
+                            <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                            <FormLabel className="text-xs uppercase font-bold cursor-pointer">Taxi / NCC</FormLabel>
+                          </FormItem>
+                        )}
+                      />
+                  </div>
+
                   <FormField
                     control={form.control}
                     name="registrationDate"
                     render={() => (
                       <FormItem>
-                        <FormLabel>Data di immatricolazione</FormLabel>
+                        <FormLabel>Immatricolazione</FormLabel>
                         <div className="grid grid-cols-3 gap-2">
                           <Select onValueChange={setDay} value={day}>
                             <SelectTrigger><SelectValue placeholder="GG" /></SelectTrigger>
@@ -447,6 +406,7 @@ export function AddVehicleForm({ open, onOpenChange }: AddVehicleFormProps) {
                       </FormItem>
                     )}
                   />
+
                   <FormField
                     control={form.control}
                     name="vehicleTypeId"
@@ -454,39 +414,53 @@ export function AddVehicleForm({ open, onOpenChange }: AddVehicleFormProps) {
                       <FormItem>
                         <FormLabel>Tipo di veicolo</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value} disabled={loadingTypes}>
-                          <FormControl><SelectTrigger><SelectValue placeholder={loadingTypes ? "Caricamento..." : "Seleziona tipo"} /></SelectTrigger></FormControl>
+                          <FormControl><SelectTrigger><SelectValue placeholder={loadingTypes ? "..." : "Seleziona"} /></SelectTrigger></FormControl>
                           <SelectContent>{vehicleTypes.map((vt) => (<SelectItem key={vt.id} value={vt.id}>{vt.name}</SelectItem>))}</SelectContent>
                         </Select>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+
                   <FormField
                     control={form.control}
                     name="currentMileage"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Chilometraggio attuale</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                            Chilometraggio Attuale
+                            {isFetchingSuggestion && <Loader2 className="h-3 w-3 animate-spin text-accent" />}
+                        </FormLabel>
                         <FormControl>
-                          <Input
-                            type="number"
-                            placeholder={isFetchingSuggestion ? "Calcolando..." : suggestedCurrentMileage ? String(suggestedCurrentMileage) : "Es. 45000"}
-                            {...field}
-                            value={field.value ?? ''}
-                          />
+                          <div className="relative">
+                            <Input
+                                type="number"
+                                placeholder={suggestedCurrentMileage ? String(suggestedCurrentMileage) : "Es. 45000"}
+                                {...field}
+                                value={field.value ?? ''}
+                                className={cn(suggestedCurrentMileage && !field.value && "border-accent/50 bg-accent/5")}
+                            />
+                            {suggestedCurrentMileage && !field.value && (
+                                <div className="absolute right-3 top-2.5 flex items-center gap-1 text-[10px] font-black text-accent uppercase animate-in fade-in duration-500">
+                                    <Sparkles className="h-3 w-3" /> IA Suggerito
+                                </div>
+                            )}
+                          </div>
                         </FormControl>
-                        <FormDescription>
-                            {isFetchingSuggestion ? 'Ricerca chilometraggio medio zona...' : suggestedCurrentMileage ? `Stima basata sulla zona: ${suggestedCurrentMileage.toLocaleString('it-IT')} km.` : 'Inserisci i km per maggiore precisione.'}
+                        <FormDescription className="text-[10px]">
+                            {suggestedCurrentMileage 
+                                ? `Stima basata sulla tua zona: ~${suggestedCurrentMileage.toLocaleString('it-IT')} km.` 
+                                : 'Inserisci i km reali per generare uno storico preciso.'}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  <DialogFooter>
-                    <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>Annulla</Button>
-                    <Button type="submit" disabled={isSubmitting || loadingTypes}>
-                      {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Aggiungi Veicolo
+
+                  <DialogFooter className="pt-2">
+                    <Button type="button" variant="ghost" onClick={handleClose} disabled={isSubmitting}>Annulla</Button>
+                    <Button type="submit" disabled={isSubmitting || loadingTypes} className="font-bold uppercase tracking-tight">
+                      {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Crea Veicolo"}
                     </Button>
                   </DialogFooter>
                 </form>
