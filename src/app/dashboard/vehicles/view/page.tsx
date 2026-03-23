@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useMemo, Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { doc, collection, query, where, updateDoc } from 'firebase/firestore';
 import { useUser } from '@/firebase/auth/use-user';
 import { useFirebase, useDoc, useCollection, errorEmitter, FirestorePermissionError } from '@/firebase';
@@ -11,7 +10,7 @@ import type { Vehicle, MaintenanceIntervention } from '@/lib/types';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { ArrowLeft, Loader2, Plus, Pencil, Trash2, CheckCircle2, Sparkles, Wifi, Bluetooth, Settings2, Activity } from 'lucide-react';
+import { ArrowLeft, Loader2, Plus, Pencil, Trash2, CheckCircle2, Sparkles, Wifi, Bluetooth, Settings2, Activity, AlertTriangle } from 'lucide-react';
 import { MaintenanceAdvisorForm } from '@/components/dashboard/maintenance-advisor-form';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +22,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 function AutomationSettings({ vehicle }: { vehicle: Vehicle }) {
     const { user } = useUser();
@@ -308,9 +308,14 @@ function InterventionsList({ vehicleId }: { vehicleId: string }) {
 function VehicleDetailContent() {
   const searchParams = useSearchParams();
   const vehicleId = searchParams.get('id');
+  const router = useRouter();
 
   const { user } = useUser();
   const { firestore } = useFirebase();
+  const { toast } = useToast();
+
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const vehicleRef = useMemo(() => {
     if (!user || !firestore || !vehicleId) return null;
@@ -318,6 +323,24 @@ function VehicleDetailContent() {
   }, [user, firestore, vehicleId]);
 
   const { data: vehicle, isLoading } = useDoc<Vehicle>(vehicleRef);
+
+  const handleDeleteVehicle = async () => {
+    if (!user || !firestore || !vehicleId || !vehicleRef) return;
+    setIsDeleting(true);
+    const dataToUpdate = { dataoraelimina: new Date().toISOString() };
+
+    try {
+        await updateDoc(vehicleRef, dataToUpdate);
+        toast({ title: 'Veicolo eliminato', description: 'Il veicolo è stato rimosso dalla tua lista.' });
+        router.push('/dashboard/vehicles');
+    } catch (e) {
+        console.error(e);
+        toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile eliminare il veicolo.' });
+    } finally {
+        setIsDeleting(false);
+        setShowDeleteConfirm(false);
+    }
+  };
 
   if (isLoading || !user || !vehicleId) {
     return (
@@ -328,14 +351,14 @@ function VehicleDetailContent() {
     );
   }
 
-  if (!vehicle) {
+  if (!vehicle || vehicle.dataoraelimina) {
     return (
       <div className="p-6 space-y-4">
         <Button variant="outline" asChild>
           <Link href="/dashboard/vehicles"><ArrowLeft className="mr-2 h-4 w-4" /> Indietro</Link>
         </Button>
         <h1 className="text-2xl font-bold">Veicolo non trovato</h1>
-        <p className="text-muted-foreground">Il veicolo che stai cercando non esiste o non hai i permessi per vederlo.</p>
+        <p className="text-muted-foreground">Il veicolo che stai cercando non esiste o è stato eliminato.</p>
       </div>
     );
   }
@@ -360,10 +383,12 @@ function VehicleDetailContent() {
         <Button variant="outline" asChild>
           <Link href="/dashboard/vehicles"><ArrowLeft className="mr-2 h-4 w-4" /> I Miei Veicoli</Link>
         </Button>
-        <Badge variant={vehicle.autoTrackingEnabled ? "default" : "outline"} className="gap-1 px-3 py-1">
-            <Bluetooth className="h-3 w-3" />
-            {vehicle.autoTrackingEnabled ? "Automazione Attiva" : "Automazione Disattivata"}
-        </Badge>
+        <div className="flex items-center gap-2">
+            <Badge variant={vehicle.autoTrackingEnabled ? "default" : "outline"} className="gap-1 px-3 py-1">
+                <Bluetooth className="h-3 w-3" />
+                {vehicle.autoTrackingEnabled ? "Automazione Attiva" : "Automazione Disattivata"}
+            </Badge>
+        </div>
       </div>
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -403,7 +428,7 @@ function VehicleDetailContent() {
             </div>
         </TabsContent>
 
-        <TabsContent value="details" className="mt-6">
+        <TabsContent value="details" className="mt-6 space-y-6">
             <Card>
                 <CardHeader>
                     <CardTitle>Specifiche del Veicolo</CardTitle>
@@ -435,17 +460,60 @@ function VehicleDetailContent() {
                     </dl>
                 </CardContent>
             </Card>
+
+            <Card className="border-destructive/20 bg-destructive/5">
+                <CardHeader>
+                    <CardTitle className="text-destructive flex items-center gap-2">
+                        <AlertTriangle className="h-5 w-5" />
+                        Zona Pericolosa
+                    </CardTitle>
+                    <CardDescription>Azioni irreversibili per questo veicolo.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground mb-4">
+                        L'eliminazione del veicolo nasconderà tutti i dati associati, inclusi i chilometri percorsi e lo storico degli interventi. 
+                        Potrai ripristinarlo solo contattando l'assistenza tecnica.
+                    </p>
+                    <Button 
+                        variant="destructive" 
+                        onClick={() => setShowDeleteConfirm(true)}
+                        className="font-bold"
+                    >
+                        <Trash2 className="mr-2 h-4 w-4" /> Elimina questo Veicolo
+                    </Button>
+                </CardContent>
+            </Card>
         </TabsContent>
 
         <TabsContent value="automations" className="mt-6">
             <AutomationSettings vehicle={vehicle} />
         </TabsContent>
       </Tabs>
+
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+          <AlertDialogContent>
+              <AlertDialogHeader>
+                  <AlertDialogTitle>Sei assolutamente sicuro?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                      Questa azione contrassegnerà il veicolo <span className="font-bold text-foreground">{vehicle.name} ({vehicle.licensePlate})</span> come eliminato.
+                      Non apparirà più nella tua Dashboard o nelle statistiche.
+                  </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                  <AlertDialogCancel>Annulla</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={handleDeleteVehicle} 
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    disabled={isDeleting}
+                  >
+                      {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sì, elimina veicolo"}
+                  </AlertDialogAction>
+              </AlertDialogFooter>
+          </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
-
-import { cn } from '@/lib/utils';
 
 export default function VehicleDetailPage() {
   return (
