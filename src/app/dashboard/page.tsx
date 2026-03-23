@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useUser } from '@/firebase/auth/use-user';
@@ -15,6 +14,7 @@ import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useTracking } from '@/contexts/tracking-context';
+import { ActiveTrackingWidget } from '@/components/dashboard/active-tracking-widget';
 
 export default function DashboardPage() {
   const { user, loading: userLoading } = useUser();
@@ -42,13 +42,10 @@ export default function DashboardPage() {
     });
   }, [vehicles, trackedVehicleId, isTracking]);
 
-  // Identifichiamo il veicolo per il quale mostrare il prompt di sincronizzazione
   const vehicleToSync = useMemo(() => {
       if (!vehicles) return null;
-      // 1. Priorità all'ultimo veicolo tracciato via GPS
       const lastGps = vehicles.find(v => v.id === lastTrackedVehicleId);
       if (lastGps) return lastGps;
-      // 2. Altrimenti il veicolo con l'ultimo aggiornamento più vecchio
       return [...vehicles].sort((a, b) => {
           const dateA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
           const dateB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
@@ -64,8 +61,6 @@ export default function DashboardPage() {
       </div>
     );
   }
-
-  const activeVehicle = vehicles?.find(v => (v.id === trackedVehicleId && isTracking) || v.trackingGPS);
 
   return (
     <div className="space-y-6">
@@ -83,6 +78,9 @@ export default function DashboardPage() {
         </Button>
       </header>
 
+      {/* Widget Tracking Attivo - Appare solo durante la guida */}
+      <ActiveTrackingWidget />
+
       {/* Prompt di sincronizzazione intelligente */}
       {vehicleToSync && !isTracking && (
         <SmartMileageSync 
@@ -97,19 +95,6 @@ export default function DashboardPage() {
                 <Car className="h-5 w-5 text-primary" />
                 <h2 className="font-headline text-xl font-bold uppercase tracking-tight">I Tuoi Mezzi</h2>
             </div>
-            {(isTracking || activeVehicle?.trackingGPS) && (
-                <div className="flex items-center gap-2">
-                    <Badge variant="destructive" className="animate-pulse gap-2 px-3 py-1 text-xs font-black shadow-lg shadow-destructive/20 border-white/20">
-                        <Activity className="h-3 w-3" /> 
-                        TRACKING GPS ATTIVO
-                    </Badge>
-                    <div className="flex gap-2 items-center text-[10px] font-black uppercase text-destructive-foreground bg-destructive rounded-full px-3 py-1 shadow-sm">
-                        <span className="flex items-center gap-1"><Activity className="h-2 w-2" /> {dailyTotalDistance.toFixed(1)} km oggi</span>
-                        <span className="w-px h-2 bg-white/30" />
-                        <span className="flex items-center gap-1"><Clock className="h-2 w-2" /> {Math.floor(dailyTotalTime)} min oggi</span>
-                    </div>
-                </div>
-            )}
         </div>
 
         {!sortedVehicles || sortedVehicles.length === 0 ? (
