@@ -10,7 +10,7 @@ import type { Vehicle, MaintenanceIntervention } from '@/lib/types';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { ArrowLeft, Loader2, Plus, Pencil, Trash2, CheckCircle2, Sparkles, Wifi, Bluetooth, Settings2, Activity, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Loader2, Plus, Pencil, Trash2, CheckCircle2, Sparkles, Wifi, Bluetooth, Settings2, Activity, AlertTriangle, Gauge } from 'lucide-react';
 import { MaintenanceAdvisorForm } from '@/components/dashboard/maintenance-advisor-form';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
