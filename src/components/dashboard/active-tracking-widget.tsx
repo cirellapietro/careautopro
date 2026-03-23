@@ -4,7 +4,7 @@ import React from 'react';
 import { useTracking } from '@/contexts/tracking-context';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Activity, Clock, StopCircle, Loader2, Gauge, AlertTriangle } from 'lucide-react';
+import { Activity, Clock, StopCircle, Loader2, Gauge, AlertTriangle, Wifi } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
@@ -12,6 +12,7 @@ export function ActiveTrackingWidget() {
   const { 
     isTracking, 
     trackedVehicle, 
+    isHotspotActive,
     dailyTotalDistance, 
     dailyTotalTime, 
     stopTracking, 
@@ -31,9 +32,16 @@ export function ActiveTrackingWidget() {
           </div>
           <span className="text-[10px] font-black uppercase tracking-widest text-destructive-foreground">Monitoraggio in Corso</span>
         </div>
-        <Badge variant="outline" className="bg-white/10 border-white/20 text-white text-[10px] font-bold">
-          {trackedVehicle.licensePlate}
-        </Badge>
+        <div className="flex gap-2">
+            {isHotspotActive && (
+                <Badge variant="outline" className="bg-white/20 border-white/30 text-white text-[10px] font-bold gap-1">
+                    <Wifi className="h-3 w-3" /> HOTSPOT
+                </Badge>
+            )}
+            <Badge variant="outline" className="bg-white/10 border-white/20 text-white text-[10px] font-bold">
+              {trackedVehicle.licensePlate}
+            </Badge>
+        </div>
       </div>
       
       <CardContent className="p-4 sm:p-6">
@@ -43,7 +51,7 @@ export function ActiveTrackingWidget() {
               {trackedVehicle.name}
             </h3>
             <p className="text-xs text-muted-foreground font-medium">
-              {trackedVehicle.make} {trackedVehicle.model} • GPS Attivo
+              {trackedVehicle.make} {trackedVehicle.model} • GPS {isHotspotActive ? '& Hotspot ' : ''}Attivo
             </p>
           </div>
 

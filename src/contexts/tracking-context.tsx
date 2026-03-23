@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useMemo, useRef } from 'react';
@@ -16,12 +15,13 @@ interface TrackingContextType {
   permissionStatus: PermissionStatus;
   isTracking: boolean;
   isStopping: boolean;
+  isHotspotActive: boolean;
   trackedVehicleId: string | null;
   lastTrackedVehicleId: string | null;
   setTrackedVehicleId: (id: string | null) => void;
-  startTracking: (vehicleIdOverride?: string) => void;
+  startTracking: (vehicleIdOverride?: string, enableHotspot?: boolean) => void;
   stopTracking: () => Promise<void>;
-  switchTrackingTo: (newVehicleId: string) => Promise<void>;
+  switchTrackingTo: (newVehicleId: string, enableHotspot?: boolean) => Promise<void>;
   trackedVehicle: Vehicle | null;
   vehicles: Vehicle[];
   sessionDistance: number; 
@@ -41,6 +41,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
     const [permissionStatus, setPermissionStatus] = useState<PermissionStatus>('prompt');
     const [isTracking, setIsTracking] = useState(false);
     const [isStopping, setIsStopping] = useState(false);
+    const [isHotspotActive, setIsHotspotActive] = useState(false);
     const [trackedVehicleId, _setTrackedVehicleId] = useState<string | null>(null);
     const [lastTrackedVehicleId, setLastTrackedVehicleId] = useState<string | null>(null);
     
@@ -102,6 +103,9 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
 
             const isTrackingSaved = localStorage.getItem(`isTracking_${userId}`) === 'true';
             if (isTrackingSaved) setIsTracking(true);
+
+            const isHotspotSaved = localStorage.getItem(`isHotspotActive_${userId}`) === 'true';
+            if (isHotspotSaved) setIsHotspotActive(true);
             
             const distanceSaved = localStorage.getItem(`sessionDistance_${userId}`);
             if (distanceSaved) {
@@ -165,14 +169,9 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         if (!vehicles || vehicles.length === 0 || isTracking) return;
 
-        // In a real Capacitor app, we would use a Bluetooth LE plugin listener here.
-        // For simulation and PWA, we can check for paired devices if available or use a mocked interval.
         const checkBluetoothDevices = () => {
-            // Check each vehicle for auto-automation
             for (const v of vehicles) {
                 if (v.autoTrackingEnabled && v.bluetoothMacAddress) {
-                    // MOCK: In a real app, logic would be: if (connectedDevice.id === v.bluetoothMacAddress)
-                    // We check if this device was "simulated" as connected in localStorage for demo
                     const isSimulatedConnected = localStorage.getItem(`simulated_bt_connected_${v.id}`) === 'true';
                     
                     if (isSimulatedConnected) {
@@ -180,7 +179,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
                             title: 'Bluetooth Rilevato!', 
                             description: `Avvio automatico per ${v.name}. ${v.autoHotspotEnabled ? 'Hotspot attivato.' : ''}` 
                         });
-                        startTracking(v.id);
+                        startTracking(v.id, v.autoHotspotEnabled);
                         break; 
                     }
                 }
@@ -269,6 +268,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
 
         if (!user || !firestore || !trackedVehicleId) {
             setIsTracking(false);
+            setIsHotspotActive(false);
             setIsStopping(false);
             return;
         }
@@ -289,11 +289,13 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
             console.error("Errore salvataggio sessione finale:", e); 
         } finally {
             setIsTracking(false);
+            setIsHotspotActive(false);
             distanceRef.current = 0; syncedDistanceRef.current = 0; syncedTimeSecondsRef.current = 0; 
             lastPositionRef.current = null; startTimeRef.current = null;
             setSessionDistance(0); setSessionDuration(0); setSyncedDistance(0);
             if (user?.uid) {
                 localStorage.removeItem(`isTracking_${user.uid}`);
+                localStorage.removeItem(`isHotspotActive_${user.uid}`);
                 localStorage.removeItem(`sessionDistance_${user.uid}`);
                 localStorage.removeItem(`syncedDistance_${user.uid}`);
                 localStorage.removeItem(`syncedTimeSeconds_${user.uid}`);
@@ -303,7 +305,7 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
         }
     }, [user, firestore, trackedVehicleId, syncMileageToDb, toast]);
 
-    const startTracking = useCallback((id?: string) => {
+    const startTracking = useCallback((id?: string, enableHotspot?: boolean) => {
         const targetId = id || trackedVehicleId;
         if (!targetId || !user || !firestore) return;
         
@@ -311,11 +313,16 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
         updateDoc(vehicleRef, { trackingGPS: true });
         setTrackedVehicleId(targetId);
         setIsTracking(true);
+        setIsHotspotActive(!!enableHotspot);
+        
+        if (user?.uid) {
+            localStorage.setItem(`isHotspotActive_${user.uid}`, String(!!enableHotspot));
+        }
     }, [trackedVehicleId, user, firestore, setTrackedVehicleId]);
 
-    const switchTrackingTo = useCallback(async (id: string) => {
+    const switchTrackingTo = useCallback(async (id: string, enableHotspot?: boolean) => {
         if (isTracking) await stopTracking();
-        startTracking(id);
+        startTracking(id, enableHotspot);
     }, [isTracking, stopTracking, startTracking]);
 
     useEffect(() => {
@@ -331,13 +338,13 @@ export function TrackingProvider({ children }: { children: ReactNode }) {
     const dailyTotalTime = todayDbStats.time + ((sessionDuration - syncedTimeSecondsRef.current) / 60);
 
     const value = useMemo(() => ({
-        permissionStatus, isTracking, isStopping, trackedVehicleId, lastTrackedVehicleId, setTrackedVehicleId, startTracking, stopTracking, switchTrackingTo,
+        permissionStatus, isTracking, isStopping, isHotspotActive, trackedVehicleId, lastTrackedVehicleId, setTrackedVehicleId, startTracking, stopTracking, switchTrackingTo,
         trackedVehicle: vehicles?.find(v => v.id === trackedVehicleId) || null,
         vehicles: vehicles || [],
         sessionDistance, sessionDuration, 
         liveSessionDistance: Math.max(0, sessionDistance - syncedDistance), 
         dailyTotalDistance, dailyTotalTime
-    }), [permissionStatus, isTracking, isStopping, trackedVehicleId, lastTrackedVehicleId, setTrackedVehicleId, startTracking, stopTracking, switchTrackingTo, vehicles, sessionDistance, sessionDuration, syncedDistance, dailyTotalDistance, dailyTotalTime]);
+    }), [permissionStatus, isTracking, isStopping, isHotspotActive, trackedVehicleId, lastTrackedVehicleId, setTrackedVehicleId, startTracking, stopTracking, switchTrackingTo, vehicles, sessionDistance, sessionDuration, syncedDistance, dailyTotalDistance, dailyTotalTime]);
 
     return <TrackingContext.Provider value={value}>{children}</TrackingContext.Provider>;
 }

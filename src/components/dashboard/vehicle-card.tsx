@@ -1,4 +1,3 @@
-
 'use client';
 
 import { type Vehicle } from '@/lib/types';
@@ -6,10 +5,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Car, Zap, Leaf, Flame, PlayCircle, StopCircle, Loader2, Gauge, Timer, Activity, Bluetooth, Wifi } from 'lucide-react';
-import React from 'react';
+import React, { useState } from 'react';
 import { useTracking } from '@/contexts/tracking-context';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 
 type VehicleCardProps = {
@@ -47,6 +48,8 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
     sessionDuration,
     liveSessionDistance,
   } = useTracking();
+
+  const [hotspotEnabled, setHotspotEnabled] = useState(vehicle.autoHotspotEnabled || false);
 
   const isThisVehicleBeingTracked = trackedVehicleId === vehicle.id && isTracking;
   const isAutomationEnabled = vehicle.autoTrackingEnabled || vehicle.autoHotspotEnabled;
@@ -100,22 +103,34 @@ export function VehicleCard({ vehicle }: VehicleCardProps) {
       );
     }
 
-    if (isTracking) {
-       return (
-            <Button onClick={(e) => handleButtonClick(e, () => switchTrackingTo(vehicle.id))} variant="outline" className="w-full border-primary text-primary hover:bg-primary/5">
-                <PlayCircle className="mr-2 h-4 w-4" /> Passa Tracking qui
-            </Button>
-        );
-    }
-    
     return (
-        <Button 
-            onClick={(e) => handleButtonClick(e, () => startTracking(vehicle.id))} 
-            className="w-full font-bold" 
-            disabled={!canStartTracking}
-        >
-            <PlayCircle className="mr-2 h-4 w-4" /> Avvia Tracking GPS
-        </Button>
+        <div className="flex flex-col gap-3 w-full">
+            <div className="flex items-center justify-between px-2 bg-muted/30 py-2 rounded-lg border">
+                <div className="flex items-center gap-2">
+                    <Wifi className={cn("h-4 w-4", hotspotEnabled ? "text-primary" : "text-muted-foreground")} />
+                    <Label htmlFor={`hotspot-${vehicle.id}`} className="text-xs font-bold uppercase cursor-pointer">Hotspot Wi-Fi</Label>
+                </div>
+                <Switch 
+                    id={`hotspot-${vehicle.id}`} 
+                    checked={hotspotEnabled} 
+                    onCheckedChange={(val) => setHotspotEnabled(val)}
+                    onClick={(e) => e.stopPropagation()}
+                />
+            </div>
+            {isTracking ? (
+                <Button onClick={(e) => handleButtonClick(e, () => switchTrackingTo(vehicle.id, hotspotEnabled))} variant="outline" className="w-full border-primary text-primary hover:bg-primary/5">
+                    <PlayCircle className="mr-2 h-4 w-4" /> Passa Tracking qui
+                </Button>
+            ) : (
+                <Button 
+                    onClick={(e) => handleButtonClick(e, () => startTracking(vehicle.id, hotspotEnabled))} 
+                    className="w-full font-bold" 
+                    disabled={!canStartTracking}
+                >
+                    <PlayCircle className="mr-2 h-4 w-4" /> Avvia Tracking GPS
+                </Button>
+            )}
+        </div>
     );
   }
 
